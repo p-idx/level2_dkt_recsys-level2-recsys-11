@@ -4,4 +4,7 @@ models/
 output/
 __pychache__/
 *.pyc
-
+weight/
+*.log
+*.ipynb
+.ipynb_checkpoints/
