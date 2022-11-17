@@ -10,7 +10,7 @@ def parse_args():
 
     parser.add_argument(
         "--data_dir",
-        default="/opt/ml/input/data/",
+        default="/opt/ml/data/",
         type=str,
         help="data directory",
     )
