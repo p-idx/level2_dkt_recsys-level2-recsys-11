@@ -34,7 +34,7 @@ class FeatureEngineer:
 
         # Change existing categorical column names
         new_names = {name:name+'C_' for name in self.cate_cols}
-        df.rename(new_names, axis=1. inplace=True)
+        df.rename(new_names, axis=1, inplace=True)
 
         # Update self.cate_cols
         new_features = []

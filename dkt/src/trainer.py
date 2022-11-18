@@ -147,17 +147,15 @@ def inference(args, test_data, model):
     _, test_loader = get_loaders(args, None, test_data)
 
     total_preds = []
-    total_targets = [] #
+
     for step, batch in enumerate(test_loader):
         input = list(map(lambda t: t.to(args.device), process_batch(batch)))
         preds = model(input)
-        targets = input[3] #
 
         # predictions
         preds = preds[:, -1]
+        preds = torch.nn.Sigmoid()(preds)
         preds = preds.cpu().detach().numpy()
-
-        total_targets.append(targets.detach())
         total_preds += list(preds)
 
     write_path = os.path.join(args.output_dir, "submission.csv")
