@@ -34,7 +34,6 @@ class LSTM(nn.Module):
         self.lstm = nn.LSTM(
             self.hidden_dim, self.hidden_dim, self.n_layers, batch_first=True
         )
-
         # Fully connected layer
         self.fc = nn.Linear(self.hidden_dim, 1)
 

@@ -2,151 +2,139 @@ import os
 import pandas as pd
 import numpy as np
 from datetime import datetime
+from tqdm import tqdm
+import time
 
-from sklearn.preprocessing import OrdinalEncoder
+from sklearn.preprocessing import OrdinalEncoder, LabelEncoder
 
-from args import parse_args
+# from args import parse_args
+BASE_DATA_PATH = '/opt/ml/data'
+
+def convert_time(s: str) -> int:
+    timestamp = time.mktime(
+        datetime.strptime(s, "%Y-%m-%d %H:%M:%S").timetuple()
+    )
+    return int(timestamp)
 
 
 class FeatureEngineer:
-    def __init__(self, args):
-        self.args = args
-        self.cate_cols = ["answerCode", "assessmentItemID", "testId", "KnowledgeTag"]
+    def __init__(self, base_path, base_train_df, base_test_df):
+        self.base_path = base_path
+        self.base_train_df = base_train_df
+        self.base_test_df = base_test_df
 
-    def load_data(self, is_train=True):
+    def __label_encoding(self, train_df:pd.DataFrame, test_df:pd.DataFrame) -> pd.DataFrame:
+        cate_cols = [col for col in train_df.columns if col[-2:] == '_c']
+        not_cate_cols = [col for col in train_df.columns if col not in cate_cols]
 
-        if not os.path.exists(self.args.fe_dir):
-            raise FileNotFoundError
+        # train_df 에 unknown 용 np.nan 을 각각 추가해준다.
+        # 피처 중 np.nan 자체가 없는 피처가 있을 수 있으므로(노결측치)
+        train_df.loc[len(train_df)] = [np.nan for _ in range(len(train_df.columns))]
 
-        # load data from file
-        if is_train:
-            filename = 'fe_train.csv'
-        else:
-            filename = 'fe_test.csv'
+        or_enc = OrdinalEncoder().set_params(encoded_missing_value=np.nan)
+        or_enc.fit(train_df.drop(not_cate_cols, axis=1))
 
-        file_path = os.path.join(self.args.fe_dir, filename)
-        df = pd.read_csv(file_path)
+        train_np = or_enc.transform(train_df.drop(not_cate_cols, axis=1)) # not_cate_cols 우하하게
+        test_np = or_enc.transform(test_df.drop(not_cate_cols, axis=1))
 
-        return df
-        
+        offset = 0
+        train_df[cate_cols] = train_np + 1 # np.nan + 1 = np.nan 임으로 이게 가능하다.
+        test_df[cate_cols] = test_np + 1
+        for cate_name in cate_cols:
+            train_df[cate_name] += offset
+            test_df[cate_name] += offset
+            offset = train_df[cate_name].max()
 
-    def _feature_engineering(self, df:pd.DataFrame):
+        train_df = train_df.fillna(0)
+        test_df = test_df.fillna(0)
 
-        # Change existing categorical column names
-        new_names = {name:name+'C_' for name in self.cate_cols}
-        df.rename(new_names, axis=1, inplace=True)
+        train_df[cate_cols + ['userID', 'answerCode']] =\
+            train_df[cate_cols + ['userID', 'answerCode']].astype(np.int64)
+        test_df[cate_cols + ['userID', 'answerCode']] =\
+            test_df[cate_cols + ['userID', 'answerCode']].astype(np.int64)
 
-        # Update self.cate_cols
-        new_features = []
-        self.cate_cols = self.cate_cols.extend(new_features)
+        train_df.iloc[-1, 0] = offset + 1 # 1은 0
+        train_df.iloc[-1, 1] = len(cate_cols)
+        train_df.iloc[-1, 2] = len(not_cate_cols) - 2 # userID, answerCode 제외
+        return train_df, test_df # np.nan 용 행 제거
 
-        raise NotImplementedError()
-
-
-    def _label_encoding(self, df, is_train=True):
-        ### 후에 Embedding 할 때, embedding layer input으로 전체 카테고리 항목 개수를 넣어줘야 해서 이 값도 저장해줘야 하는데,
-        ### 그냥 integer value 하나라서 어떻게 저장하면 효율적일지 모르겠네요...
-        ### (기존 Baseline에서는 모든게 한번에 진행되서 args.n_cate 이런식으로 저장해주고 나중에 불러왔어요)
-
-        ### Ordinal Encoder랑 강의 코드에서 따온 offset encoding 둘 다 넣어놨습니다
-        ### Ordinal Encoder 쓸 때는 __save_labels() 따로 정의해줘서 encoding mapping 해줄 파일 저장하는 방식을 되있습니다
-        ### (그냥 self.labels로 정의해줘서 써도 가능할 것 같긴 한데 이것도 embedding layer input 값 때문에 문제네용)
-
-
-        # #################### Ordinal Encoder
-        # for col in self.cate_cols:
-
-        #     oe = OrdinalEncoder()
-        #     if is_train:
-        #         # For UNKNOWN class
-        #         a = df[col].unique().tolist() + ["unknown"]
-        #         oe.fit(a)
-        #         self.__save_labels(oe, col)
-        #     else:
-        #         label_path = os.path.join(self.args.asset_dir, col + "_classes.npy")
-        #         oe.classes_ = np.load(label_path)
-
-        #         df[col] = df[col].apply(
-        #             lambda x: x if str(x) in oe.classes_ else "unknown"
-        #         )
-
-        #     df[col] = df[col].astype(str)
-        #     test = oe.transform(df[col])
-        #     df[col] = test
-
-         
-
-        # ################## Offset        
-        # mappers_dict = {}
-
-        # # nan 값이 0이므로 위해 offset은 1에서 출발한다
-        # cate_offset = 1
-
-        # for col in self.cate_cols:
-            
-        #     # 각 column마다 mapper를 만든다
-        #     cate2idx = {}
-        #     for v in df[col].unique():
-
-        #         # nan 및 None은 넘기는 코드
-        #         if (v != v) | (v == None):
-        #             continue
-
-        #         # offset 추가 - cumulative sum
-        #         cate2idx[v] = len(cate2idx) + cate_offset 
-
-        #     mappers_dict[col] = cate2idx 
-
-        #     # mapping
-        #     df[col] = df[col].map(cate2idx).fillna(0).astype(int)
-
-        #     # offset 추가 - cumulative sum 
-        #     cate_offset += len(cate2idx)
-
-        # self.args.cate_offset = cate_offset
-
-        # def convert_time(s):
-        #     timestamp = time.mktime(
-        #         datetime.strptime(s, "%Y-%m-%d %H:%M:%S").timetuple()
-        #     )
-        #     return int(timestamp)
-
-        # df["Timestamp"] = df["Timestamp"].apply(convert_time)
-
-        # return df
-        pass
-
-        
-    def split_data(self, data):
-        pass
 
     def run(self):
-        train_df = self.load_data(is_train=True)
-        test_df = self.load_data(is_train=False)
+        print(f'[{self.__class__.__name__}] {self}')
+        print(f'[{self.__class__.__name__}] preprocessing start...')
 
-        train_df = self._feature_engineering(train_df)
-        test_df = self._feature_engineering(test_df)
+        if not os.path.exists(os.path.join(self.base_path, self.__class__.__name__)):
+            os.mkdir(os.path.join(self.base_path, self.__class__.__name__))
 
-        train_df = self._label_encoding(is_train=True)
-        test_df = self._label_encoding(is_train=False)
-        
-        # 저장까지 FE01/
+        print(f'[{self.__class__.__name__}] feature engineering...')
+        fe_train_df, fe_test_df = self.feature_engineering(self.base_train_df, self.base_test_df)
 
-        # save 
-        train_df.to_csv(os.path.join(self.args.fe_dir, 'train.csv'))
-        test_df.to_csv(os.path.join(self.args.fe_dir, 'test.csv'))
-        
+        fe_train_df = fe_train_df.drop(['Timestamp'], axis=1)
+        fe_test_df = fe_test_df.drop(['Timestamp'], axis=1)
+
+        print(f'[{self.__class__.__name__}] label encoding...')
+        le_fe_train_df, le_fe_test_df = self.__label_encoding(fe_train_df, fe_test_df)
+         
+        print(f'[{self.__class__.__name__}] save...')
+        le_fe_train_df.to_csv(os.path.join(f'/opt/ml/data/{self.__class__.__name__}', 'train_data.csv'), index=False)
+        le_fe_test_df.to_csv(os.path.join(f'/opt/ml/data/{self.__class__.__name__}', 'test_data.csv'), index=False)
+        print(f'[{self.__class__.__name__}] done.')
+
+
+    def feature_engineering(self, train_df:pd.DataFrame, test_df:pd.DataFrame) -> pd.DataFrame:
+        raise NotImplementedError()
     
 
-class FE(FeatureEngineer):
-    def __init__(self):
-        super().__init__()
+# baseline EDA
+class FE00(FeatureEngineer):
+    def __str__(self):
+        return \
+            """유저의 시험 별로 한 칸씩 내려 이전 시험문제를 맞추었는지에 대한 feature 추가"""
+    def feature_engineering(self, train_df:pd.DataFrame, test_df:pd.DataFrame) -> pd.DataFrame:
+        #################################
+        # 완전 베이스 데이터로 시작합니다.
+        #
+        # Timestamp 컬럼은 이후 버려집니다. 버리실 필요 없습니다.
+        # userID, answerCode 는 수정할 수 없습니다. test 의 -1 로 되어있는 부분 그대로 가져갑니다. (컬럼 위치 변경은 가능합니다.)
+        # 새 카테고리 컬럼을 만들 때, 결측치가 생길 시 np.nan 으로 채워주세요. *'None', -1 등 불가
+        # 새 컨티뉴어스 컬럼을 만들 때, 결측치가 생길 시 imputation 해주세요. ex) mean... etc. *np.nan은 불가
+        # tip) imputation 이 어렵다면, 이전 대회의 age 범주화 같은 방법을 사용해 카테고리 컬럼으로 만들어 주세요.
+        #################################
 
-    def feature_engineering(data: pd.DataFrame):
-        # 여기에 열심히 fe 한 코드들 복붙
-        return None
+        # TODO: merge 하면 그대로 eda 진행 후 test_df 따로 떼주세요. 하단은 merge 없는 예
+        fe_num = f'[{self.__class__.__name__}]' # <- 클래스 번호 출력용.
+        train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
+        test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
+        train_df['cont_ex'] = 1.0
+        test_df['cont_ex'] = 1.0
+
+        # 카테고리 컬럼 끝 _c 붙여주세요.
+        train_df = train_df.rename(columns=
+            {
+                'assessmentItemID' : 'assessmentItemID_c', # 기본 1
+                'testId' : 'testId_c', # 기본 2
+                'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
+                'interaction' : 'interaction_c',
+            }
+        )
+        test_df = test_df.rename(columns=
+            {
+                'assessmentItemID' : 'assessmentItemID_c', # 기본 1
+                'testId' : 'testId_c', # 기본 2
+                'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
+                'interaction' : 'interaction_c',
+            }
+        )
+        return train_df, test_df
+
+
+def main():
+    base_train_df = pd.read_csv(os.path.join(BASE_DATA_PATH, 'train_data.csv'))
+    base_test_df = pd.read_csv(os.path.join(BASE_DATA_PATH, 'test_data.csv'))
+
+    # 클래스 생성 후 여기에 번호대로 추가해주세요.
+    FE00(BASE_DATA_PATH, base_train_df, base_test_df).run()
 
 
 if __name__=='__main__':
-    new_df = FE()
-    new_df.run()
+    main()

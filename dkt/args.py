@@ -14,6 +14,14 @@ def parse_args():
         type=str,
         help="data directory",
     )
+
+    parser.add_argument(
+        "--fe_num",
+        default='00',
+        type=str,
+        help='feature engineering data file path (ex) 00'
+    )
+    
     parser.add_argument(
         "--asset_dir", default="asset/", type=str, help="data directory"
     )
@@ -37,27 +45,36 @@ def parse_args():
     )
 
     parser.add_argument(
-        "--max_seq_len", default=20, type=int, help="max sequence length"
+        "--validation",
+        default='basic',
+        choices=['basic', 'kfold'],
+        type=str,
+        help='basic random or kfold(5)'
+    )
+
+    parser.add_argument(
+        "--max_seq_len", default=32, type=int, help="max sequence length"
     )
     parser.add_argument("--num_workers", default=1, type=int, help="number of workers")
 
     # 모델
+    parser.add_argument('--emb_dim', default=16, type=int)
     parser.add_argument(
-        "--hidden_dim", default=64, type=int, help="hidden dimension size"
+        "--hidden_dim", default=32, type=int, help="hidden dimension size"
     )
     parser.add_argument("--n_layers", default=2, type=int, help="number of layers")
     parser.add_argument("--n_heads", default=2, type=int, help="number of heads")
     parser.add_argument("--drop_out", default=0.2, type=float, help="drop out rate")
 
     # 훈련
-    parser.add_argument("--n_epochs", default=20, type=int, help="number of epochs")
-    parser.add_argument("--batch_size", default=64, type=int, help="batch size")
+    parser.add_argument("--n_epochs", default=230, type=int, help="number of epochs")
+    parser.add_argument("--batch_size", default=128, type=int, help="batch size")
     parser.add_argument("--lr", default=0.0001, type=float, help="learning rate")
     parser.add_argument("--clip_grad", default=10, type=int, help="clip grad")
     parser.add_argument("--patience", default=5, type=int, help="for early stopping")
 
     parser.add_argument(
-        "--log_steps", default=50, type=int, help="print log per n steps"
+        "--log_steps", default=10, type=int, help="print log per n steps"
     )
 
     ### 중요 ###

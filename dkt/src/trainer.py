@@ -86,6 +86,8 @@ def train(train_loader, model, optimizer, scheduler, args):
         preds = model(input)
         targets = input[3]  # correct
 
+        print(preds)
+        print(targets)
         loss = compute_loss(preds, targets)
         update_params(loss, model, optimizer, scheduler, args)
 
@@ -120,8 +122,6 @@ def validate(valid_loader, model, args):
 
         preds = model(input)
         targets = input[3]  # correct
-        print(targets)
-        raise 'pk'
 
         # predictions
         preds = preds[:, -1]

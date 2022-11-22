@@ -8,7 +8,35 @@ import pandas as pd
 import torch
 import tqdm
 from sklearn.preprocessing import LabelEncoder
+from sklearn.model_selection import KFold
 
+def get_data(args, is_train: bool, leakage: bool=False):
+    if is_train:
+        data = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'train_data.csv'))
+        offset = data.iloc[-1, 0]
+        cate_num = data.iloc[-1, 1]
+        cont_num = data.iloc[-1, 2]
+        data = data.iloc[:-1]
+        return data.groupby('userID').apply(
+        lambda df: tuple([df[col] for col in df.columns if col != 'userID'])
+        ), offset, cate_num, cont_num
+    else:
+        data = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'test_data.csv'))
+        return data.groupby('userID').apply(
+        lambda df: tuple([df[col] for col in df.columns if col != 'userID'])
+        )
+
+
+def split_data(data:pd.Series, ratio=0.7, shuffle=True):
+    if shuffle:
+        data = data.sample(frac=1)
+
+    size = int(len(data) * ratio)
+    data_1 = data.iloc[:size]
+    data_2 = data.iloc[size:]
+
+    return data_1, data_2
+        
 
 class Preprocess:
     def __init__(self, args):
@@ -137,7 +165,7 @@ class DKTDataset(torch.utils.data.Dataset):
 
         cate_cols = [test, question, tag, correct]
 
-        # max seq len을 고려하여서 이보다 길면 자르고 아닐 경우 그대로 냅둔다
+        # max seq len을 고려하여서 이보다 길면 자르고 아닐 경우 그대로 냅둔다 # 왜 이따구로 하냐고요
         if seq_len > self.args.max_seq_len:
             for i, col in enumerate(cate_cols):
                 cate_cols[i] = col[-self.args.max_seq_len :]
