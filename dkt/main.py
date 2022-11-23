@@ -4,7 +4,7 @@ import datetime
 from args import parse_args
 from src.dataloader import DKTDataset, load_data
 from src.utils import setSeeds
-from src.model import LSTM
+from src.model import LSTM, GRU, BERT
 from src.lightning_model import DKTLightning
 
 import torch
@@ -21,23 +21,7 @@ import wandb
 def main(args):
     wandb.login()
 
-    hyperparameter_defaults = dict(
-        model = args.model,
-        fe_num = args.fe_num,
-        max_seq_len = args.max_seq_len,
-        cate_emb_dim = args.cate_emb_dim,
-        cate_proj_dim = args.cate_proj_dim,
-        cont_proj_dim = args.cont_proj_dim,
-        hidden_dim = args.hidden_dim,
-        n_layers = args.n_layers,
-        n_heads = args.n_heads,
-        drop_out = args.drop_out,
-        batch_size = args.batch_size,
-        learning_rate = args.lr,
-    )
-    
     setSeeds(args.seed)
-    # args.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     train_data = load_data(args, is_train=True)
 
@@ -85,6 +69,10 @@ def main(args):
     # torch model, lightning model ready
     if args.model == 'LSTM':
         torch_model = LSTM(args)
+    elif args.model == 'GRU':
+        torch_model = GRU(args)
+    elif args.model == 'BERT':
+        torch_model = BERT(args)
 
     lightning_model = DKTLightning(args, torch_model)
 
@@ -100,7 +88,7 @@ def main(args):
 
     wandb_logger = WandbLogger( # 애가 wandb.init 비슷한거 다 해줌.
         entity='mkdir',
-        project='yang3',
+        project='yang5',
         name=f"{torch_model.__class__.__name__}_{args.fe_num}_{args.time_info}",
     )
 
@@ -108,7 +96,7 @@ def main(args):
 
     # trainer ready
     trainer = pl.Trainer(
-        default_root_dir=os.getcwd(),
+        default_root_dir=os.getcwd(), 
         logger=wandb_logger,
         log_every_n_steps=args.log_steps,
         callbacks=[
@@ -120,9 +108,9 @@ def main(args):
             ),
             ModelCheckpoint(
                 dirpath=write_path,
-                monitor="valid_acc",
-                filename="{epoch}-{valid_auc:.2f}-{valid_acc:.2f}",
-                mode="max",
+                monitor="valid_loss",
+                filename=os.path.join(write_path, "loss_min"),
+                mode="min",
                 save_top_k=1,
             ),
         ],
@@ -131,11 +119,14 @@ def main(args):
         accelerator='gpu'
     )
 
+    # 모델 체크포인트 시 트레인 끝내고 그 탑 모델로 인퍼런스 하는지 확인결과 그 탑 모델로 예측함.
+    # 직접 체크포인터 뽑아서 로드해서 테스트해서 비교해봄.
+
     # train
     trainer.fit(lightning_model, train_loader, valid_loader)
 
     # inference
-    preds = trainer.predict(lightning_model, test_loader)
+    trainer.predict(lightning_model, test_loader)
 
 
 if __name__ == "__main__":

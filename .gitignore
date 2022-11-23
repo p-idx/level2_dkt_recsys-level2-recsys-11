@@ -10,3 +10,7 @@ weight/
 .ipynb_checkpoints/
 .vscode/
 *.csv
+*.ckpt
+*.out
+*.output
+
