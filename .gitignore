@@ -8,3 +8,5 @@ weight/
 *.log
 *.ipynb
 .ipynb_checkpoints/
+.vscode/
+*.csv
