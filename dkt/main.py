@@ -1,130 +1,121 @@
 import os
-import numpy as np
-import torch
-# import wandb
+import datetime
 
 from args import parse_args
-from src import trainer
-from src.dataloader_ import get_data, split_data, get_loader
+from src.dataloader import DKTDataset, load_data
 from src.utils import setSeeds
-from src.model_ import LSTM
+from src.model import LSTM_Riiid
+from src.lightning_model import DKTLightning
 
+import torch
 import torch.nn as nn
-from sklearn.metrics import accuracy_score, roc_auc_score
+from torch.utils.data import DataLoader
+import pytorch_lightning as pl
+from pytorch_lightning.loggers.wandb import WandbLogger
+from pytorch_lightning.callbacks.early_stopping import EarlyStopping
+from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
+from sklearn.model_selection import train_test_split, KFold
+import wandb
+
 
 def main(args):
-    # wandb.login()
-
+    wandb.login()
     setSeeds(args.seed)
     args.device = "cuda" if torch.cuda.is_available() else "cpu"
 
-    # 일단 스플릿 까지 하고.
-    train_data, offset, cate_num, cont_num = get_data(args, is_train=True)
-    train_data, valid_data = split_data(train_data)
-    test_data = get_data(args, is_train=False)
+    train_data = load_data(args, is_train=True)
 
-    args.offset = offset + 1
-    args.cate_num = cate_num
-    args.cont_num = cont_num
-    train_dataloader, valid_dataloader = get_loader(args, train_data, valid_data)
-    _, test_dataloader = get_loader(args, None, test_data)
+    # train_data ready
+    train_data, valid_data = train_test_split(
+        train_data,
+        test_size=0.3, # 일단 이정도로 학습해서 추이 확인
+        shuffle=True,
+        random_state=args.seed,
+    )
 
-    # train test
-    model = LSTM(args).to(device=args.device)
-    criterion = nn.BCEWithLogitsLoss(reduction="none")
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001, weight_decay=0.01)
+    train_dataset = DKTDataset(train_data, args)
+    valid_dataset = DKTDataset(valid_data, args)
 
-    def get_metric(targets, preds):
-        auc = roc_auc_score(targets, preds)
-        acc = accuracy_score(targets, np.where(preds >= 0.5, 1, 0))
+    train_loader = DataLoader(
+        train_dataset,
+        num_workers=4,
+        shuffle=True,
+        batch_size=args.batch_size,
+    )
+    valid_loader = DataLoader(
+        valid_dataset,
+        num_workers=4,
+        shuffle=False,
+        batch_size=args.batch_size,
+    )
 
-        return auc, acc
+    # test_data ready
+    test_data = load_data(args, is_train=False)
+    test_dataset = DKTDataset(test_data, args)
+    test_loader = DataLoader(
+        test_dataset,
+        num_workers=4,
+        shuffle=True,
+        batch_size=args.batch_size,
+    )
 
-    for epoch in range(args.n_epochs):
-        total_loss = []
-        total_preds = []
-        total_targets = []
-
-        model.train()
-        for cate_x, cont_x, mask, targets in train_dataloader:
-            cate_x = cate_x.to(args.device)
-            cont_x = cont_x.to(args.device)
-            mask = mask.to(args.device)
-            targets = targets.to(args.device)
-
-            preds = model(cate_x, cont_x, mask)
-
-            losses = criterion(preds, targets)
-            loss = torch.mean(losses[:, -1])
-
-            optimizer.zero_grad()
-            loss.backward()
-            torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip_grad)
-            optimizer.step()
-
-            total_loss.append(loss.item())
-            total_preds.append(preds[:, -1].detach())
-            total_targets.append(targets[:, -1].detach())
-
-        total_preds = torch.concat(total_preds).cpu().numpy()
-        total_targets = torch.concat(total_targets).cpu().long().numpy()
+    test_loader = DataLoader(
+        test_dataset,
+        num_workers=4,
+        shuffle=False,
+        batch_size=args.batch_size,
+    )
 
 
-        # Train AUC / ACC
-        auc, acc = get_metric(total_targets, total_preds)
-        loss_avg = np.mean(total_loss)
-        # print(total_preds)
-        if epoch % args.log_steps == 0:
-            print(f"[{epoch}] TRAIN AUC : {auc} ACC : {acc} loss: {loss_avg}")
+    # torch model, lightning model ready
+    torch_model = LSTM_Riiid(args)
+    torch_model_name = torch_model.__class__.__name__
+    lightning_model = DKTLightning(args, torch_model)
 
+    # about log, save model etc..
+    time_info = (datetime.datetime.today() + datetime.timedelta(hours= 9)).strftime('%m%d_%H%M')
 
+    if not os.path.exists(args.model_dir):
+        os.makedirs(args.model_dir)
+    write_path = os.path.join(
+        args.model_dir,
+        f"{torch_model.__class__.__name__}_{time_info}/"
+    )
 
-        total_preds = []
-        total_targets = []
+    wandb_logger = WandbLogger(
+        project='dkt',
+        name=f"{torch_model.__class__.__name__}_{time_info}",
+    )
 
-        model.eval()
-        for cate_x, cont_x, mask, targets in valid_dataloader:
-            cate_x = cate_x.to(args.device)
-            cont_x = cont_x.to(args.device)
-            mask = mask.to(args.device)
-            targets = targets.to(args.device)
+    # trainer ready
+    trainer = pl.Trainer(
+        default_root_dir=os.getcwd(),
+        logger=wandb_logger,
+        log_every_n_steps=args.log_steps,
+        callbacks=[
+            EarlyStopping(
+                monitor='valid_loss',
+                mode='min',
+                patience=5
+            ),
+            ModelCheckpoint(
+                dirpath=write_path,
+                monitor="valid_acc",
+                filename="{epoch}-{valid_auc:.2f}-{valid_acc:.2f}",
+                mode="max",
+                save_top_k=1,
+            ),
+        ],
+        gradient_clip_val=args.clip_grad,
+        max_epochs=args.n_epochs,
+        accelerator='gpu'
+    )
 
-            preds = model(cate_x, cont_x, mask)
+    # train
+    trainer.fit(lightning_model, train_loader, valid_loader)
 
-            total_preds.append(preds[:, -1].detach())
-            total_targets.append(targets[:, -1].detach())
-
-        total_preds = torch.concat(total_preds).cpu().numpy()
-        total_targets = torch.concat(total_targets).cpu().long().numpy()
-
-        # Valid AUC / ACC
-        auc, acc = get_metric(total_targets, total_preds)
-        if epoch % args.log_steps == 0:
-            print(f"[{epoch}] VALID AUC : {auc} ACC : {acc}")
-
-
-    total_preds = []
-    model.eval()
-    for cate_x, cont_x, mask, targets in test_dataloader:
-        cate_x = cate_x.to(args.device)
-        cont_x = cont_x.to(args.device)
-        mask = mask.to(args.device)
-        targets = targets.to(args.device)
-
-        preds = model(cate_x, cont_x, mask)
-        preds = preds[:, -1]
-        preds = nn.Sigmoid()(preds)
-        preds = preds.cpu().detach().numpy()
-        total_preds += list(preds)
-
-    # 타임, fe, 모델명 추가.
-    write_path = os.path.join(args.output_dir, "submission-t.csv")
-    if not os.path.exists(args.output_dir):
-        os.makedirs(args.output_dir)
-    with open(write_path, "w", encoding="utf8") as w:
-        w.write("id,prediction\n")
-        for id, p in enumerate(total_preds):
-            w.write("{},{}\n".format(id, p))
+    # inference
+    preds = trainer.predict(lightning_model, test_loader)
 
 
 if __name__ == "__main__":
