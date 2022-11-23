@@ -83,6 +83,7 @@ def main(args):
     )
 
     wandb_logger = WandbLogger(
+        entity = 'mkdir',
         project='dkt',
         name=f"{torch_model.__class__.__name__}_{time_info}",
     )
