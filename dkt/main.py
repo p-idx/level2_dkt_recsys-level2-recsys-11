@@ -4,7 +4,7 @@ import datetime
 from args import parse_args
 from src.dataloader import DKTDataset, load_data
 from src.utils import setSeeds
-from src.model import LSTM_Riiid
+from src.model import LSTM
 from src.lightning_model import DKTLightning
 
 import torch
@@ -20,15 +20,31 @@ import wandb
 
 def main(args):
     wandb.login()
+
+    hyperparameter_defaults = dict(
+        model = args.model,
+        fe_num = args.fe_num,
+        max_seq_len = args.max_seq_len,
+        cate_emb_dim = args.cate_emb_dim,
+        cate_proj_dim = args.cate_proj_dim,
+        cont_proj_dim = args.cont_proj_dim,
+        hidden_dim = args.hidden_dim,
+        n_layers = args.n_layers,
+        n_heads = args.n_heads,
+        drop_out = args.drop_out,
+        batch_size = args.batch_size,
+        learning_rate = args.lr,
+    )
+    
     setSeeds(args.seed)
-    args.device = "cuda" if torch.cuda.is_available() else "cpu"
+    # args.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     train_data = load_data(args, is_train=True)
 
     # train_data ready
     train_data, valid_data = train_test_split(
         train_data, 
-        test_size=0.3, # 일단 이정도로 학습해서 추이 확인
+        test_size=0.3, # 일단 이 정도로 학습해서 추이 확인
         shuffle=True,
         random_state=args.seed,
     )
@@ -38,13 +54,13 @@ def main(args):
 
     train_loader = DataLoader(
         train_dataset,
-        num_workers=4,
+        num_workers=args.num_workers,
         shuffle=True,
         batch_size=args.batch_size,
     )
     valid_loader = DataLoader(
         valid_dataset,
-        num_workers=4,
+        num_workers=args.num_workers,
         shuffle=False,
         batch_size=args.batch_size,
     )
@@ -54,7 +70,7 @@ def main(args):
     test_dataset = DKTDataset(test_data, args)
     test_loader = DataLoader(
         test_dataset,
-        num_workers=4,
+        num_workers=args.num_workers,
         shuffle=True,
         batch_size=args.batch_size,
     )
@@ -67,24 +83,28 @@ def main(args):
     )
 
     # torch model, lightning model ready
-    torch_model = LSTM_Riiid(args)
-    torch_model_name = torch_model.__class__.__name__
+    if args.model == 'LSTM':
+        torch_model = LSTM(args)
+
     lightning_model = DKTLightning(args, torch_model)
 
     # about log, save model etc..
-    time_info = (datetime.datetime.today() + datetime.timedelta(hours= 9)).strftime('%m%d_%H%M')
+    args.time_info = (datetime.datetime.today() + datetime.timedelta(hours=9)).strftime('%m%d_%H%M')
 
     if not os.path.exists(args.model_dir):
         os.makedirs(args.model_dir)
     write_path = os.path.join(
         args.model_dir,
-        f"{torch_model.__class__.__name__}_{time_info}/"
+        f"{torch_model.__class__.__name__}_{args.fe_num}_{args.time_info}/"
     )
 
-    wandb_logger = WandbLogger(
-        project='dkt',
-        name=f"{torch_model.__class__.__name__}_{time_info}",
+    wandb_logger = WandbLogger( # 애가 wandb.init 비슷한거 다 해줌.
+        entity='mkdir',
+        project='yang3',
+        name=f"{torch_model.__class__.__name__}_{args.fe_num}_{args.time_info}",
     )
+
+    wandb_logger.experiment.config.update(args)
 
     # trainer ready
     trainer = pl.Trainer(
@@ -95,7 +115,8 @@ def main(args):
             EarlyStopping(
                 monitor='valid_loss', 
                 mode='min', 
-                patience=5
+                patience=args.patience,
+                verbose=True,
             ),
             ModelCheckpoint(
                 dirpath=write_path,

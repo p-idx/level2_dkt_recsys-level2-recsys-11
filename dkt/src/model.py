@@ -10,28 +10,28 @@ from transformers.models.bert.modeling_bert import (
 )
 
 
-class LSTM_Riiid(nn.Module):
+class LSTM(nn.Module):
     def __init__(self, args):
         super().__init__()
         self.args = args
         
         # cate_x embedding
-        self.cate_emb_layer = nn.Embedding(args.offset, args.emb_dim, padding_idx=0)
+        self.cate_emb_layer = nn.Embedding(args.offset, args.cate_emb_dim, padding_idx=0)
         self.cate_proj_layer = nn.Sequential(
-            nn.Linear(args.emb_dim * args.cate_num, args.hidden_dim),
-            nn.LayerNorm(args.hidden_dim)
+            nn.Linear(args.cate_emb_dim * args.cate_num, args.cate_proj_dim),
+            nn.LayerNorm(args.cate_proj_dim)
         )
 
         # cont_x embedding
         self.cont_proj_layer = nn.Sequential(
-            nn.Linear(args.cont_num, args.hidden_dim),
-            nn.LayerNorm(args.hidden_dim)
+            nn.Linear(args.cont_num, args.cont_proj_dim),
+            nn.LayerNorm(args.cont_proj_dim)
         )
 
         # cate_x + cont_x projection
         self.comb_proj_layer = nn.Sequential(
-            # nn.ReLU(),
-            nn.Linear(args.hidden_dim * 2, args.hidden_dim),
+            nn.ReLU(),
+            nn.Linear(args.cate_proj_dim + args.cont_proj_dim, args.hidden_dim),
             nn.LayerNorm(args.hidden_dim),
         )
 
@@ -43,7 +43,7 @@ class LSTM_Riiid(nn.Module):
         self.final_layer = nn.Sequential(
             nn.Linear(args.hidden_dim, args.hidden_dim), # 원래는 (args.hidden_dim, args.hidden_dim)
             nn.LayerNorm(args.hidden_dim),
-            nn.Dropout(),
+            nn.Dropout(args.drop_out),
             nn.ReLU(),
             nn.Linear(args.hidden_dim, 1)
         )
