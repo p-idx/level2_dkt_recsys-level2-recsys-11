@@ -1,7 +1,7 @@
 import os
 import numpy as np
 import torch
-import wandb
+# import wandb
 
 from args import parse_args
 from src import trainer
@@ -44,19 +44,19 @@ def main(args):
         total_loss = []
         total_preds = []
         total_targets = []
-        
+
         model.train()
         for cate_x, cont_x, mask, targets in train_dataloader:
             cate_x = cate_x.to(args.device)
             cont_x = cont_x.to(args.device)
             mask = mask.to(args.device)
             targets = targets.to(args.device)
-            
+
             preds = model(cate_x, cont_x, mask)
 
             losses = criterion(preds, targets)
             loss = torch.mean(losses[:, -1])
-            
+
             optimizer.zero_grad()
             loss.backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), args.clip_grad)
@@ -81,14 +81,14 @@ def main(args):
 
         total_preds = []
         total_targets = []
-        
+
         model.eval()
         for cate_x, cont_x, mask, targets in valid_dataloader:
             cate_x = cate_x.to(args.device)
             cont_x = cont_x.to(args.device)
             mask = mask.to(args.device)
             targets = targets.to(args.device)
-            
+
             preds = model(cate_x, cont_x, mask)
 
             total_preds.append(preds[:, -1].detach())
@@ -110,13 +110,13 @@ def main(args):
         cont_x = cont_x.to(args.device)
         mask = mask.to(args.device)
         targets = targets.to(args.device)
-        
+
         preds = model(cate_x, cont_x, mask)
         preds = preds[:, -1]
         preds = nn.Sigmoid()(preds)
         preds = preds.cpu().detach().numpy()
         total_preds += list(preds)
-    
+
     # 타임, fe, 모델명 추가.
     write_path = os.path.join(args.output_dir, "submission-t.csv")
     if not os.path.exists(args.output_dir):

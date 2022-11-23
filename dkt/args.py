@@ -17,11 +17,11 @@ def parse_args():
 
     parser.add_argument(
         "--fe_num",
-        default='00',
+        default='02',
         type=str,
         help='feature engineering data file path (ex) 00'
     )
-    
+
     parser.add_argument(
         "--asset_dir", default="asset/", type=str, help="data directory"
     )
