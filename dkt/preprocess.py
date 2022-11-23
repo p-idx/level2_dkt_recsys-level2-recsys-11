@@ -105,8 +105,8 @@ class FE00(FeatureEngineer):
         fe_num = f'[{self.__class__.__name__}]' # <- 클래스 번호 출력용.
         train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
         test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-        train_df['cont_ex'] = 1.0
-        test_df['cont_ex'] = 1.0
+        train_df['cont_ex'] = 0.0
+        test_df['cont_ex'] = 0.0
 
         # 카테고리 컬럼 끝 _c 붙여주세요.
         train_df = train_df.rename(columns=

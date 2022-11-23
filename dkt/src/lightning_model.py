@@ -24,13 +24,17 @@ class DKTLightning(pl.LightningModule):
         cate_x, cont_x, mask, targets = batch
         preds = self.model(cate_x, cont_x, mask)
 
-        losses = self.loss_fn(preds, targets)[:, -1]
-        loss = torch.mean(losses)
+        if self.args.leak == 0:
+            losses = self.loss_fn(preds, targets)[:, -1]
+            loss = torch.mean(losses)
+        else:
+            losses = self.loss_fn(preds, targets)
+            loss = torch.sum(losses)
 
         self.train_auc(preds[:, -1], targets[:, -1].long())
         self.train_acc(preds[:, -1], targets[:, -1].long())
 
-        # self.log('train_loss', loss, on_step=False, on_epoch=True)
+        self.log('train_loss', loss, on_step=False, on_epoch=True)
         self.log('train_auc', self.train_auc, on_step=False, on_epoch=True) # __str__ 오버라이딩을 통해 그냥 들어가도 되는 듯.
         self.log('train_acc', self.train_acc, on_step=False, on_epoch=True)
         return loss
@@ -40,7 +44,7 @@ class DKTLightning(pl.LightningModule):
         # Adam 말고 나중에 다른걸로
         optimizer = torch.optim.Adam(self.parameters(), lr=self.args.lr)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-            optimizer, patience=5, factor=0.5, mode="min", verbose=True,
+            optimizer, patience=2, factor=0.5, mode="min", verbose=True,
         )
         return {
             "optimizer": optimizer, 
@@ -52,6 +56,14 @@ class DKTLightning(pl.LightningModule):
     def validation_step(self, batch, batch_idx):
         cate_x, cont_x, mask, targets = batch
         preds = self.model(cate_x, cont_x, mask)
+
+        if self.args.leak == 0:
+            val_losses = self.loss_fn(preds, targets)[:, -1]
+            val_loss = torch.mean(val_losses)
+        else:
+            val_losses = self.loss_fn(preds, targets)
+            val_loss = torch.sum(val_losses)
+
         val_losses = self.loss_fn(preds, targets)[:, -1] # 맨 끝 many-to-one
         val_loss = torch.mean(val_losses) # 배치들을 평균
 
