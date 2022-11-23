@@ -6,7 +6,7 @@ def parse_args():
 
     parser.add_argument("--seed", default=42, type=int, help="seed")
 
-    parser.add_argument("--device", default="cpu", type=str, help="cpu or gpu")
+    # parser.add_argument("--device", default="cpu", type=str, help="cpu or gpu")
 
     parser.add_argument(
         "--data_dir",
@@ -20,10 +20,6 @@ def parse_args():
         default='00',
         type=str,
         help='feature engineering data file path (ex) 00'
-    )
-    
-    parser.add_argument(
-        "--asset_dir", default="asset/", type=str, help="data directory"
     )
 
     parser.add_argument(
@@ -44,30 +40,23 @@ def parse_args():
         "--test_file_name", default="test_data.csv", type=str, help="test file name"
     )
 
-    parser.add_argument(
-        "--validation",
-        default='basic',
-        choices=['basic', 'kfold'],
-        type=str,
-        help='basic random or kfold(5)'
-    )
-
-    parser.add_argument(
-        "--max_seq_len", default=32, type=int, help="max sequence length"
-    )
-    parser.add_argument("--num_workers", default=1, type=int, help="number of workers")
+    parser.add_argument("--max_seq_len", default=16, type=int, help="max sequence length" )
+    parser.add_argument("--num_workers", default=8, type=int, help="number of workers")
 
     # 모델
-    parser.add_argument('--emb_dim', default=16, type=int)
+    parser.add_argument('--cate_emb_dim', default=32, type=int) # 라벨인코딩하면 어차피 만개 넘어가서 32 ~ 64 등
+    parser.add_argument('--cate_proj_dim', default=16, type=int) # 라벨인코딩하면 어차피 만개 넘어가서 32 ~ 64 등
+    parser.add_argument("--cont_proj_dim", default=2, type=int) # 수치형 피처 수보다 적어야 좋을듯.
     parser.add_argument(
         "--hidden_dim", default=32, type=int, help="hidden dimension size"
-    )
+    ) # 위의 두개를 합친거 보다 작아야 좋은.
+
     parser.add_argument("--n_layers", default=2, type=int, help="number of layers")
     parser.add_argument("--n_heads", default=2, type=int, help="number of heads")
     parser.add_argument("--drop_out", default=0.2, type=float, help="drop out rate")
 
     # 훈련
-    parser.add_argument("--n_epochs", default=100, type=int, help="number of epochs")
+    parser.add_argument("--n_epochs", default=1000, type=int, help="number of epochs")
     parser.add_argument("--batch_size", default=64, type=int, help="batch size")
     parser.add_argument("--lr", default=0.0001, type=float, help="learning rate")
     parser.add_argument("--clip_grad", default=0.5, type=int, help="clip grad")
@@ -78,11 +67,10 @@ def parse_args():
     )
 
     ### 중요 ###
-    parser.add_argument("--model", default="lstm", type=str, help="model type")
+    # 일단 보류.
+    parser.add_argument("--model", default="LSTM", type=str, help="model type")
     parser.add_argument("--optimizer", default="adam", type=str, help="optimizer type")
-    parser.add_argument(
-        "--scheduler", default="plateau", type=str, help="scheduler type"
-    )
+    parser.add_argument("--scheduler", default="plateau", type=str, help="scheduler type")
 
     args = parser.parse_args()
 
