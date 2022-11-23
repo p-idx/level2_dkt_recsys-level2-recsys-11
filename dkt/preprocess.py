@@ -400,39 +400,31 @@ class FE04(FeatureEngineer):
 class FE05(FeatureEngineer):
     def __str__(self):
         return \
-            """test_df FE test for my solution"""
+            """문제 풀이에 걸린 시간 / 문항 번호별 평균 정답률 / 요일별 평균 정답률 / 각 문항별 평균 정답률"""
     def feature_engineering(self, train_df:pd.DataFrame, test_df:pd.DataFrame) -> pd.DataFrame:
-        #################################
-        # 완전 베이스 데이터로 시작합니다.
-        #
-        # Timestamp 컬럼은 이후 버려집니다. 버리실 필요 없습니다.
-        # userID, answerCode 는 수정할 수 없습니다. test 의 -1 로 되어있는 부분 그대로 가져갑니다. (컬럼 위치 변경은 가능합니다.)
-        # 새 카테고리 컬럼을 만들 때, 결측치가 생길 시 np.nan 으로 채워주세요. *'None', -1 등 불가
-        # 새 컨티뉴어스 컬럼을 만들 때, 결측치가 생길 시 imputation 해주세요. ex) mean... etc. *np.nan은 불가
-        # tip) imputation 이 어렵다면, 이전 대회의 age 범주화 같은 방법을 사용해 카테고리 컬럼으로 만들어 주세요.
-        #################################
-        
-        numeric_col = []
-        test_user = test_df.userID.unique()
-        train_user = train_df.userID.unique()
-
-        
-        fe_num = f'[{self.__class__.__name__}]' # <- 클래스 번호 출력용.
-        train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-        test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-        train_df['cont_ex'] = 1.0
-        test_df['cont_ex'] = 1.0
-
-        merged_df = pd.concat([train_df, test_df], axis=0)
-        merged_df = merged_df.sort_values(['userID','Timestamp'])
-        
+                
         '''
+        FE 방법
         - shift를 진행하는 FE는 -1을 포함한 merged_df에 적용한다.
         - answerCode를 사용하는 FE는 -1 값을 빼뒀다가 mapping을 이용한다. 
         - 그 외의 FE는 
         ==> 하나의 코드 블럭에서 하나의 FE에 대해서만 적용할 수 있으므로, 문제가 생겼을 때 해결하기 쉬울 것
         '''
         
+        fe_num = f'[{self.__class__.__name__}]' # <- 클래스 번호 출력용.
+        
+        numeric_col = [] # 정규화 적용할 column 추가
+        test_user = test_df.userID.unique()
+        train_user = train_df.userID.unique()
+        
+        train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
+        test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
+        train_df['cont_ex'] = 1.0 # numeric 보험용
+        test_df['cont_ex'] = 1.0
+
+        merged_df = pd.concat([train_df, test_df], axis=0)
+        merged_df = merged_df.sort_values(['userID','Timestamp'])
+
         ####################### Shift를 사용하는 Feature #######################
         # 유저가 문제를 푸는데 걸린 시간
         merged_df['shifted'] = merged_df.groupby(['userID','testId'])[['userID','Timestamp']].shift()['Timestamp']
@@ -677,8 +669,16 @@ class FE06(FeatureEngineer):
 
 
 def main():
-    base_train_df = pd.read_csv(os.path.join(BASE_DATA_PATH, 'train_data.csv'))
-    base_test_df = pd.read_csv(os.path.join(BASE_DATA_PATH, 'test_data.csv'))
+    # TODO
+    dtype = {
+    'userID': 'int16',
+    'answerCode': 'int8',
+    'KnowledgeTag': 'int16',
+    'assessmentItemID': 'category',
+    'testId': 'category'
+}   
+    base_train_df = pd.read_csv(os.path.join(BASE_DATA_PATH, 'train_data.csv'), parse_dates=['Timestamp'])
+    base_test_df = pd.read_csv(os.path.join(BASE_DATA_PATH, 'test_data.csv'), parse_dates=['Timestamp'])
 
     # 클래스 생성 후 여기에 번호대로 추가해주세요.
     # FE00(BASE_DATA_PATH, base_train_df, base_test_df).run()
