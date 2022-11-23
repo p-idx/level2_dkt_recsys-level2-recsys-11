@@ -5,7 +5,7 @@ from datetime import datetime
 from tqdm import tqdm
 import time
 
-from sklearn.preprocessing import OrdinalEncoder, LabelEncoder
+from sklearn.preprocessing import OrdinalEncoder, LabelEncoder, StandardScaler
 
 # from args import parse_args
 BASE_DATA_PATH = '/opt/ml/data'
@@ -518,7 +518,162 @@ class FE05(FeatureEngineer):
         )
         return train_df, test_df
 
+class FE06(FeatureEngineer):
+    def __str__(self):
+        return \
+            """FE00 + 유저별 푼 문제수, 실력, 문제 별 난이도, 노출 정도, 태그 별 난이도, 노출 정도, 문제 풀리는데 걸리는 시간, 찍었는지 여부"""
+    def feature_engineering(self, train_df:pd.DataFrame, test_df:pd.DataFrame) -> pd.DataFrame:
+        #################################
+        # 완전 베이스 데이터로 시작합니다.
+        #
+        # Timestamp 컬럼은 이후 버려집니다. 버리실 필요 없습니다.
+        # userID, answerCode 는 수정할 수 없습니다. test 의 -1 로 되어있는 부분 그대로 가져갑니다. (컬럼 위치 변경은 가능합니다.)
+        # 새 카테고리 컬럼을 만들 때, 결측치가 생길 시 np.nan 으로 채워주세요. *'None', -1 등 불가
+        # 새 컨티뉴어스 컬럼을 만들 때, 결측치가 생길 시 imputation 해주세요. ex) mean... etc. *np.nan은 불가
+        # tip) imputation 이 어렵다면, 이전 대회의 age 범주화 같은 방법을 사용해 카테고리 컬럼으로 만들어 주세요.
+        #################################
 
+        # TODO: merge한 DataFrame(merged)을 이용하여 feature engineering 진행 후, test_df에 새로 생성된 feature들을 merge해주는 방법
+        fe_num = f'[{self.__class__.__name__}]' # <- 클래스 번호 출력용.
+        train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
+        test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
+        train_df['cont_ex'] = 1.0
+        test_df['cont_ex'] = 1.0
+
+        # merge를 하기 위해서 test_df에서 -1을 answerCode로 갖는 행을 제외한 df 생성
+        test_tmp = test_df[test_df.answerCode != -1].reset_index()
+        test_tmp = test_tmp.drop('index', axis=1)
+
+        # merge후, interaction항 추가 해줌
+        merged = pd.concat([train_df,test_tmp],axis=0)
+        merged.sort_values(['userID','Timestamp'], inplace=True)
+        merged = merged.reset_index().drop('index', axis=1)
+        merged['interaction'] = merged.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
+
+        # 정답률을 계산하기 위한 percentile 함수 정의
+        def percentile(s):
+            return np.sum(s) / len(s)
+        
+        # grade를 나누기 위한 grade_map 함수 정의
+        def grade_map(x : float):
+            if x <= 0.4:
+                return 0
+            elif 0.4< x <0.8:
+                return 1
+            elif x >= 0.8:
+                return 2
+
+        ##### FE 시작 #####
+        ##############################################################
+        ## stu_groupby_merged : userID 이용한 FE ## : counts, user_grade 추가
+        stu_groupby_merged = merged.groupby('userID').agg({
+            'assessmentItemID': 'count',
+            'answerCode': percentile
+        })
+        stu_groupby_merged.columns = ['counts', 'meanAnswerRate'] # groupby 집계, counts : 유저가 푼 문제의 개수
+        test_df['counts'] = test_df['userID'].map(stu_groupby_merged['counts']) # test_df mapping
+        
+        stu_groupby_merged['user_grade'] = stu_groupby_merged['meanAnswerRate'].apply(grade_map) # 유저의 평균 정답률을 이용한 실력,등급 정의
+        test_df['user_grade'] = test_df['userID'].map(stu_groupby_merged['user_grade']) # test_df mapping
+        
+        # merge : counts (유저가 푼 문제의 개수), user_grade (유저의 실력) 추가
+        merged = merged.join(stu_groupby_merged.loc[:,['counts','user_grade']], how='left', on='userID')
+        
+        ##############################################################
+        ## prob_groupby : assessmentItemID 이용한 FE ## 
+        prob_groupby = merged.groupby('assessmentItemID').agg({
+            'userID': 'count',
+            'answerCode': percentile
+        })
+        prob_groupby.columns = ['numUsers', 'meanAnswerRate'] # groupby 집계, numUsers : 문제를 푼 유저는 몇명인지
+        prob_groupby['ass_grade'] = prob_groupby['meanAnswerRate'].apply(grade_map) # 문제 평균 정답률을 이용한 난이도 정의
+        test_df['ass_grade'] = test_df['assessmentItemID'].map(prob_groupby['ass_grade']) # test_df mapping
+
+        prob_solved_mean = prob_groupby['numUsers'].mean() # numUsers의 평균 (평균적으로 각 문제들은 몇 명에게 노출됐는가)
+        prob_groupby['ass_solved'] = prob_groupby['numUsers'].apply(lambda x: int(x>prob_solved_mean)) # 문제가 많이 노출된 편인지, 아닌지 여부
+        test_df['ass_solved'] = test_df['assessmentItemID'].map(prob_groupby['ass_solved']) # test_df mapping
+        
+        # merge : ass_grade, ass_solved 추가
+        merged = merged.join(prob_groupby.loc[:,['ass_grade','ass_solved']], how='left', on='assessmentItemID')
+        
+        ##############################################################
+        ## tag_groupby : KnowledgeTag 이용한 FE ## 
+        tag_groupby = merged.groupby('KnowledgeTag').agg({
+            'userID': 'count',
+            'answerCode': percentile
+        })
+        tag_groupby.columns = ['numUsers', 'meanAnswerRate'] # groupby 집계, numUsers : 문제를 푼 유저는 몇명인지
+        tag_groupby['tag_grade'] = tag_groupby['meanAnswerRate'].apply(lambda x: grade_map(x)) # 태그 평균 정답률을 이용한 난이도 정의
+        test_df['tag_grade'] = test_df['KnowledgeTag'].map(tag_groupby['tag_grade']) # test_df mapping
+
+        tag_solved_mean = tag_groupby['numUsers'].mean() # numUsers의 평균 (평균적으로 각 태그들은 몇 명에게 노출됐는가)
+        tag_groupby['tag_solved'] = tag_groupby['numUsers'].apply(lambda x:int(x>tag_solved_mean)) # 태그가 많이 노출된 편인지, 아닌지 여부
+        test_df['tag_solved'] = test_df['KnowledgeTag'].map(tag_groupby['tag_solved']) # test_df mapping
+
+        # merge : tag_grade, tag_solced 추가
+        merged = merged.join(tag_groupby.loc[:,['tag_grade','tag_solved']], how='left', on='KnowledgeTag')
+        
+        ##############################################################
+        ## Timestamp 이용한 FE ##
+        # Timestamp 차이를 통해 이번문제를 푸는데 얼마나 걸렸는가에 대해 diff 변수 생성하기 (미션1에서 잘못된 부분 수정함)
+        merged['Timestamp'] = pd.to_datetime(merged['Timestamp'], format="%Y-%m-%d %H:%M:%S")
+        diff = merged.loc[:, ['userID','testId','Timestamp']].groupby(['userID','testId']).diff().fillna(pd.Timedelta(seconds=0))
+        diff = diff.fillna(pd.Timedelta(seconds=0))
+        diff = diff['Timestamp'].apply(lambda x: x.total_seconds())
+        merged['elapsed'] = pd.concat([diff[1:], pd.Series([0.0])]).reset_index().iloc[:,1]  # 걸린 시간
+        merged['mark_randomly'] = merged['elapsed'].apply(lambda x: int((x>0) & (x<=5)))     # 걸린 시간이 1초에서 5초 사이는 평균 정답률이 너무 낮아서 찍은 걸로 간주
+
+        test_df['Timestamp'] = pd.to_datetime(test_df['Timestamp'], format="%Y-%m-%d %H:%M:%S")
+        diff = test_df.loc[:, ['userID','testId','Timestamp']].groupby(['userID','testId']).diff().fillna(pd.Timedelta(seconds=0))
+        diff = diff.fillna(pd.Timedelta(seconds=0))
+        diff = diff['Timestamp'].apply(lambda x: x.total_seconds())
+        test_df['elapsed'] = pd.concat([diff[1:], pd.Series([0.0])]).reset_index().iloc[:,1]  # 걸린 시간
+        test_df['mark_randomly'] = test_df['elapsed'].apply(lambda x: int((x>0) & (x<=5)))     # 걸린 시간이 1초에서 5초 사이는 평균 정답률이 너무 낮아서 찍은 걸로 간주
+
+        ## test_df에서 우리가 예측해야할 sequence는 모두 elapsed가 0.0이다 (문제를 풀었다는 정보가 없기 때문에)
+        ## 따라서 그 부분을 조금이라도 대치해주기 위해서 test_last_sequence라는 df를 생성 (-1인 것들 분리)
+        test_last_sequence = test_df.loc[test_df['answerCode'] == -1, :]
+        test_df = test_df.loc[test_df['answerCode'] != -1, :]
+
+        ## 해당 문제의 median elapsed time으로 대치해주기
+        test_last_sequence['elapsed'] = test_last_sequence['assessmentItemID'].map(merged.groupby(['assessmentItemID'])['elapsed'].median())
+        
+        ## 다시 concat하고, index는 건드리지 않았기 때문에 index 기준으로 정렬해주기 (원상복구됨)
+        test_df = pd.concat([test_df, test_last_sequence], axis=0)
+        test_df.sort_index(inplace=True)
+        
+        train_df = merged # train_df를 merge한 걸로 덮어쓰기
+
+        # 카테고리 컬럼 끝 _c 붙여주세요.
+        train_df = train_df.rename(columns=
+            {
+                'assessmentItemID' : 'assessmentItemID_c', # 기본 1
+                'testId' : 'testId_c', # 기본 2
+                'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
+                'interaction' : 'interaction_c',
+                'user_grade' : 'user_grade_c',
+                'ass_grade' : 'ass_grade_c',
+                'ass_solved' : 'ass_solved_c',
+                'tag_grade' : 'tag_grade_c',
+                'tag_solved' : 'tag_solved_c',
+                'mark_randomly' : 'mark_randomly_c'
+            }
+        )
+        test_df = test_df.rename(columns=
+            {
+                'assessmentItemID' : 'assessmentItemID_c', # 기본 1
+                'testId' : 'testId_c', # 기본 2
+                'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
+                'interaction' : 'interaction_c',
+                'user_grade' : 'user_grade_c',
+                'ass_grade' : 'ass_grade_c',
+                'ass_solved' : 'ass_solved_c',
+                'tag_grade' : 'tag_grade_c',
+                'tag_solved' : 'tag_solved_c',
+                'mark_randomly' : 'mark_randomly_c'
+            }
+        )
+        return train_df, test_df
 
 
 def main():
@@ -530,9 +685,9 @@ def main():
     # FE01(BASE_DATA_PATH, base_train_df, base_test_df).run()
     # FE02(BASE_DATA_PATH, base_train_df, base_test_df).run()
     # FE03(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    FE04(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    FE05(BASE_DATA_PATH, base_train_df, base_test_df).run()
-
+    # FE04(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    # FE05(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    FE06(BASE_DATA_PATH, base_train_df, base_test_df).run()
 
 if __name__=='__main__':
     main()
