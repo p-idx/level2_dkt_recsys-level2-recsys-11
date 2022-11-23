@@ -66,6 +66,7 @@ def main(args):
         batch_size=args.batch_size,
     )
 
+
     # torch model, lightning model ready
     if args.model == 'LSTM':
         torch_model = LSTM(args)

@@ -17,7 +17,7 @@ def parse_args():
 
     parser.add_argument(
         "--fe_num",
-        default='00',
+        default='02',
         type=str,
         help='feature engineering data file path (ex) 00'
     )
