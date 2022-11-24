@@ -79,7 +79,7 @@ class DKTLightning(pl.LightningModule):
     def on_predict_epoch_end(self, results):
         write_path = os.path.join(
             self.args.output_dir, 
-            f"{self.model.__class__.__name__}_{self.args.time_info}_K{self.args.k_i}_{self.args.leak}.csv"
+            f"{self.model.__class__.__name__}_{self.args.time_info}_K{self.args.k_i}_{self.args.leak}_FE{self.args.fe_num}.csv"
         )
 
         total_preds = torch.cat(results[0]).numpy()

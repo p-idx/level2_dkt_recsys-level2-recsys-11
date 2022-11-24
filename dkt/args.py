@@ -17,7 +17,7 @@ def parse_args():
 
     parser.add_argument(
         "--fe_num",
-        default='02',
+        default='00',
         type=str,
         help='feature engineering data file path (ex) 00'
     )
@@ -57,7 +57,7 @@ def parse_args():
 
     # 훈련
     parser.add_argument("--n_epochs", default=100, type=int, help="number of epochs")
-    parser.add_argument("--batch_size", default=32, type=int, help="batch size")
+    parser.add_argument("--batch_size", default=64, type=int, help="batch size")
     parser.add_argument("--lr", default=0.0001, type=float, help="learning rate")
     parser.add_argument("--clip_grad", default=0.5, type=float, help="clip grad")
     parser.add_argument("--patience", default=5, type=int, help="for early stopping")
@@ -68,7 +68,7 @@ def parse_args():
 
     ### 중요 ###
     # 일단 보류.
-    parser.add_argument("--model", default="BERT", type=str, help="model type")
+    parser.add_argument("--model", default="GRU", type=str, help="model type")
     parser.add_argument("--optimizer", default="adam", type=str, help="optimizer type")
     parser.add_argument("--scheduler", default="plateau", type=str, help="scheduler type")
 

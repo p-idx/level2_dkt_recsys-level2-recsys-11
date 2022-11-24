@@ -15,12 +15,12 @@ import pytorch_lightning as pl
 from pytorch_lightning.loggers.wandb import WandbLogger
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
-from sklearn.model_selection import train_test_split, KFold
+from sklearn.model_selection import train_test_split, KFold, StratifiedKFold
 import wandb
 
 
 def main(args):
-    wandb.login()
+    # wandb.login()
 
     setSeeds(args.seed)
 
@@ -46,10 +46,17 @@ def main(args):
 
     # train_data ready
     train_data = load_data(args, is_train=True)
+    for_stratify = []
+    for user_info in train_data:
+        for col in user_info:
+            if col.name == 'answerCode':
+                for_stratify.append(col.iloc[-1])
+
     
-    kf = KFold(n_splits=5, shuffle=True, random_state=args.seed)
+    # kf = KFold(n_splits=5, shuffle=False)
+    kf = StratifiedKFold(n_splits=5, shuffle=False)
     total_preds = np.zeros(len(test_data), dtype=np.float32)
-    for i, (train_index, valid_index) in enumerate(kf.split(train_data)):
+    for i, (train_index, valid_index) in enumerate(kf.split(train_data, for_stratify)):
         # train_data_fold ready
         train_data_fold = train_data.iloc[train_index]
         valid_data_fold = train_data.iloc[valid_index]
@@ -83,13 +90,13 @@ def main(args):
 
         write_path = os.path.join(
             args.model_dir,
-            f"{args.model}_{args.fe_num}_{args.time_info}_K{args.k_i}_{args.leak}/"
+            f"{args.model}_{args.time_info}_K{args.k_i}_{args.leak}_FE{args.fe_num}/"
         )
 
         wandb_logger = WandbLogger( # 애가 wandb.init 비슷한거 다 해줌.
             entity='mkdir',
-            project='yang8',
-            name=f"{args.model}_{args.fe_num}_{args.time_info}_K{args.k_i}_{args.leak}",
+            project='yang11',
+            name=f"{args.model}_{args.time_info}_K{args.k_i}_{args.leak}_FE{args.fe_num}",
         )
 
         wandb_logger.experiment.config.update(args)
@@ -131,7 +138,7 @@ def main(args):
     # kfold mean ensemble
     write_path = os.path.join(
         args.output_dir, 
-        f"{args.model}_{args.time_info}_M_{args.leak}.csv"
+        f"{args.model}_{args.time_info}_M_{args.leak}_FE{args.fe_num}.csv"
     )
 
     total_preds /= 5
