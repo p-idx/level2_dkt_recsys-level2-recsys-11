@@ -89,7 +89,7 @@ def main(args):
         wandb_logger = WandbLogger(
             entity='mkdir',
             project='sj2',
-            name=f"{torch_model.__class__.__name__}_{args.time_info}_K{args.k_i}_{args.leak}_{args.fe_num}",
+            name=f"{torch_model.__class__.__name__}_{args.time_info}_K{args.k_i}_{args.leak}_FE{args.fe_num}",
         )
 
         wandb_logger.experiment.config.update(args)
