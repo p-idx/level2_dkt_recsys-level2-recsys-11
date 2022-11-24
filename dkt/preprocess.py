@@ -106,8 +106,8 @@ class FE00(FeatureEngineer):
         fe_num = f'[{self.__class__.__name__}]' # <- 클래스 번호 출력용.
         train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
         test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-        train_df['cont_ex'] = 1.0
-        test_df['cont_ex'] = 1.0
+        train_df['cont_ex'] = 0.0
+        test_df['cont_ex'] = 0.0
 
         # 카테고리 컬럼 끝 _c 붙여주세요.
         train_df = train_df.rename(columns=
@@ -681,12 +681,12 @@ def main():
     base_test_df = pd.read_csv(os.path.join(BASE_DATA_PATH, 'test_data.csv'), parse_dates=['Timestamp'])
 
     # 클래스 생성 후 여기에 번호대로 추가해주세요.
-    # FE00(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE01(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE02(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE03(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE04(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE05(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    FE00(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    FE01(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    FE02(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    FE03(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    FE04(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    FE05(BASE_DATA_PATH, base_train_df, base_test_df).run()
     FE06(BASE_DATA_PATH, base_train_df, base_test_df).run()
 
 if __name__=='__main__':
