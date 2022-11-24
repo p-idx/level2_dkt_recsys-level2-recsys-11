@@ -14,7 +14,9 @@ def get_model(args):
         model = lgb.LGBMClassifier(**args.model_param, n_estimators=100, random_state=args.SEED)
 
     if model_name == 'CATB':
-        model = ctb.CatBoostClassifier(iterations=args.n_epochs,
+        model = ctb.CatBoostClassifier(
+                                    objective = 'AUC',
+                                    iterations=args.n_epochs,
                                     depth=args.depth,
                                     learning_rate=args.lr,
                                     verbose=50,
