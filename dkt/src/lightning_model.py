@@ -48,21 +48,14 @@ class DKTLightning(pl.LightningModule):
         )
         return {
             "optimizer": optimizer, 
-            "lr_scheduler": scheduler,
-            'monitor': 'valid_loss' # 다른거 아무거나 쓰면 안됨. 실행시 뭐만 쓸수있다 알아서 익셉션줌. 굳
+            # "lr_scheduler": scheduler,
+            # 'monitor': 'valid_loss' # 다른거 아무거나 쓰면 안됨. 실행시 뭐만 쓸수있다 알아서 익셉션줌. 굳
         }
         
     
     def validation_step(self, batch, batch_idx):
         cate_x, cont_x, mask, targets = batch
         preds = self.model(cate_x, cont_x, mask)
-
-        if self.args.leak == 0:
-            val_losses = self.loss_fn(preds, targets)[:, -1]
-            val_loss = torch.mean(val_losses)
-        else:
-            val_losses = self.loss_fn(preds, targets)
-            val_loss = torch.sum(val_losses)
 
         val_losses = self.loss_fn(preds, targets)[:, -1] # 맨 끝 many-to-one
         val_loss = torch.mean(val_losses) # 배치들을 평균
@@ -86,10 +79,10 @@ class DKTLightning(pl.LightningModule):
     def on_predict_epoch_end(self, results):
         write_path = os.path.join(
             self.args.output_dir, 
-            f"{self.model.__class__.__name__}_{self.args.time_info}.csv"
+            f"{self.model.__class__.__name__}_{self.args.time_info}_K{self.args.k_i}_{self.args.leak}.csv"
         )
 
-        total_preds = torch.cat(results[0]).tolist()
+        total_preds = torch.cat(results[0]).numpy()
 
         if not os.path.exists(self.args.output_dir):
             os.makedirs(self.args.output_dir)
