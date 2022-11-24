@@ -57,8 +57,12 @@ class DKTLightning(pl.LightningModule):
         cate_x, cont_x, mask, targets = batch
         preds = self.model(cate_x, cont_x, mask)
 
-        val_losses = self.loss_fn(preds, targets)[:, -1] # 맨 끝 many-to-one
-        val_loss = torch.mean(val_losses) # 배치들을 평균
+        if self.args.leak == 0:
+            val_losses = self.loss_fn(preds, targets)[:, -1]
+            val_loss = torch.mean(val_losses)
+        else:
+            val_losses = self.loss_fn(preds, targets)
+            val_loss = torch.sum(val_losses)
 
         self.valid_auc(preds[:, -1], targets[:, -1].long())
         self.valid_acc(preds[:, -1], targets[:, -1].long())
