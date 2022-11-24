@@ -15,7 +15,7 @@ def get_model(args):
 
     if model_name == 'CATB':
         model = ctb.CatBoostClassifier(
-                                    objective = 'AUC',
+                                    eval_metric='AUC',
                                     iterations=args.n_epochs,
                                     depth=args.depth,
                                     learning_rate=args.lr,

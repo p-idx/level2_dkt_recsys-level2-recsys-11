@@ -23,7 +23,8 @@ def main(args):
     model = get_model(args)
     model.fit(X_train, y_train,
             eval_set=(X_valid, y_valid),
-            cat_features=cate_cols)
+            cat_features=cate_cols,
+            )
 
     predicts = model.predict(test_data)
 
@@ -58,7 +59,7 @@ if __name__ == '__main__':
         help='feature engineering data file path (ex) 00'
     )
     parser.add_argument("--model", default="CATB", type=str, help="model type")
-    parser.add_argument("--n_epochs", default=100, type=int, help="number of epochs")
+    parser.add_argument("--n_epochs", default=1000, type=int, help="number of epochs")
     parser.add_argument("--lr", default=0.1, type=float, help="learning rate")
     parser.add_argument("--seed", default=42, type=int, help="seed")
 
