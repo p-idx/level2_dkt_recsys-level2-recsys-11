@@ -4,7 +4,7 @@ import datetime
 from args import parse_args
 from src.dataloader import DKTDataset, load_data
 from src.utils import setSeeds
-from src.model import LSTM, GRU, BERT
+from src.model import LSTM, GRU, GRUBI, GRUATT, BERT
 from src.lightning_model import DKTLightning
 
 import numpy as np
@@ -83,6 +83,8 @@ def main(args):
             torch_model = LSTM(args)
         elif args.model == 'GRU':
             torch_model = GRU(args)
+        elif args.model == 'GRUATT':
+            torch_model = GRUATT(args)
         elif args.model == 'BERT':
             torch_model = BERT(args)
 
@@ -95,8 +97,8 @@ def main(args):
 
         wandb_logger = WandbLogger( # 애가 wandb.init 비슷한거 다 해줌.
             entity='mkdir',
-            project='yang11',
-            name=f"{args.model}_{args.time_info}_K{args.k_i}_{args.leak}_FE{args.fe_num}",
+            project='yang_att_test',
+            name=f"{args.model}_{args.fe_num}_{args.time_info}_K{args.k_i}_{args.leak}_FE{args.fe_num}",
         )
 
         wandb_logger.experiment.config.update(args)
@@ -133,7 +135,7 @@ def main(args):
         preds = trainer.predict(lightning_model, test_loader)
         total_preds += torch.concat(preds).numpy()
         wandb.finish()
-    
+        
         
     # kfold mean ensemble
     write_path = os.path.join(

@@ -29,7 +29,7 @@ class DKTLightning(pl.LightningModule):
             loss = torch.mean(losses)
         else:
             losses = self.loss_fn(preds, targets)
-            loss = torch.sum(losses)
+            loss = torch.mean(losses)
 
         self.train_auc(preds[:, -1], targets[:, -1].long())
         self.train_acc(preds[:, -1], targets[:, -1].long())
@@ -48,8 +48,8 @@ class DKTLightning(pl.LightningModule):
         )
         return {
             "optimizer": optimizer, 
-            # "lr_scheduler": scheduler,
-            # 'monitor': 'valid_loss' # 다른거 아무거나 쓰면 안됨. 실행시 뭐만 쓸수있다 알아서 익셉션줌. 굳
+            "lr_scheduler": scheduler,
+            'monitor': 'valid_loss' # 다른거 아무거나 쓰면 안됨. 실행시 뭐만 쓸수있다 알아서 익셉션줌. 굳
         }
         
     
@@ -62,7 +62,7 @@ class DKTLightning(pl.LightningModule):
             val_loss = torch.mean(val_losses)
         else:
             val_losses = self.loss_fn(preds, targets)
-            val_loss = torch.sum(val_losses)
+            val_loss = torch.mean(val_losses)
 
         self.valid_auc(preds[:, -1], targets[:, -1].long())
         self.valid_acc(preds[:, -1], targets[:, -1].long())
