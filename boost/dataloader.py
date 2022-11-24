@@ -8,8 +8,18 @@ from sklearn.model_selection import train_test_split
 # 데이터 로드 함수(train, test) from directory
 def get_data(args):
     train_data = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'train_data.csv'))
+    
     test_data = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'test_data.csv'))
-    return train_data, test_data
+    
+    # merge/분리
+    df = pd.concat(train_data, test_data).reset_index(drop=True)
+
+    cate_cols = [col for col in df.columns if col[-2:]== '_c']
+
+    test = df.query('answerCode == -1')
+    train = df.drop(test_data.index)
+
+    return cate_cols, train, test
 
 
 # 데이터 스플릿 함수

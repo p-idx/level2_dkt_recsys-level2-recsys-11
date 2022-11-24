@@ -1,19 +1,19 @@
+import xgboost as xgb
+import lightgbm as lgb
+import catboost as ctb
 
-def XGB(cfg):
-    pass
 
-def LGBM(cfg):
-    pass
+def get_model(cfg):
 
-def CATB(cfg):
-    pass
+    model_name = cfg.model_name
 
-def get_model(model_name: str, cfg: dict):
     if model_name == "XGB":
-        model = XGB(cfg)
+        model = XGBClassifier(**cfg, n_estimators=100, random_state=args.SEED)
+
     if model_name == 'LGBM':
-        model = LGBM(cfg)
+        model = LGBMClassifier(**cfg.model_param, n_estimators=100, random_state=args.SEED)
+
     if model_name == 'CATB':
-        model = CATB(cfg)
+        model = CatBoostClassifier(**cfg.model_param)
 
     return model

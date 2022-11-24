@@ -14,13 +14,27 @@ def main(args):
 
     setSeeds(args.seed)
 
-    train_data, test_data = get_data(args)
+    cate_cols, train_data, test_data = get_data(args)
     X_train, X_valid, y_train, y_valid = data_split(train_data)
 
-    model = get_model(cfg)
+    model = get_model(cfg.name)
+    model.fit(X_train, y_train, validation_data=(X_valid, y_valid), **cfg.fit_param)
+
     predicts = model(test_data)
 
     # SAVE
+    output_dir = 'output/'
+    write_path = os.path.join(output_dir, "LGBM_submission.csv")
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    with open(write_path, 'w', encoding='utf8') as w:
+        print("writing prediction : {}".format(write_path))
+        w.write("id,prediction\n")
+        for id, p in enumerate(predicts):
+            w.write('{},{}\n'.format(id,p))
+
 
 if __name__ == '__main__':
 
