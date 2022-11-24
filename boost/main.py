@@ -2,6 +2,7 @@ import argparse
 from dataloader import get_data, data_split
 from models import get_model
 from utils import setSeeds
+import os
 
 
 # import hydra
@@ -17,14 +18,16 @@ def main(args):
     cate_cols, train_data, test_data = get_data(args)
     X_train, X_valid, y_train, y_valid = data_split(train_data)
 
-    model = get_model(cfg.name)
-    model.fit(X_train, y_train, validation_data=(X_valid, y_valid), **cfg.fit_param)
+    model = get_model(args)
+    model.fit(X_train, y_train,
+            eval_set=(X_valid, y_valid),
+            cat_features=cate_cols)
 
-    predicts = model(test_data)
+    predicts = model.predict(test_data)
 
     # SAVE
-    output_dir = 'output/'
-    write_path = os.path.join(output_dir, "LGBM_submission.csv")
+    output_dir = './output/'
+    write_path = os.path.join(output_dir, f"{model}.csv")
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
@@ -52,9 +55,12 @@ if __name__ == '__main__':
         type=str,
         help='feature engineering data file path (ex) 00'
     )
-    parser.add_argument("--model", default="cat", type=str, help="model type")
+    parser.add_argument("--model", default="CATB", type=str, help="model type")
     parser.add_argument("--n_epochs", default=100, type=int, help="number of epochs")
-    parser.add_argument("--lr", default=0.01, type=float, help="learning rate")
+    parser.add_argument("--lr", default=0.1, type=float, help="learning rate")
+    parser.add_argument("--seed", default=42, type=int, help="seed")
+
+    parser.add_argument("--depth", default=6, type=int, help="depth of catboost")
 
     args = parser.parse_args()
 
