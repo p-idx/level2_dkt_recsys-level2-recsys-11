@@ -68,6 +68,8 @@ class LSTM(nn.Module):
 
         # final forward
         out = self.final_layer(hs)
+        if out.dim() == 2:
+            return out
         return out.squeeze()
     
 
@@ -131,7 +133,7 @@ class GRU(nn.Module):
 
         # final forward
         out = self.final_layer(hs)
-        return out.squeeze()
+        return out.squeeze(-1)
 
 
 class BERT(nn.Module):
@@ -205,4 +207,6 @@ class BERT(nn.Module):
 
         # final forward
         out = self.final_layer(hs)
+        if out.dim() == 2:
+            return out
         return out.squeeze()

@@ -57,8 +57,12 @@ class DKTLightning(pl.LightningModule):
         cate_x, cont_x, mask, targets = batch
         preds = self.model(cate_x, cont_x, mask)
 
-        val_losses = self.loss_fn(preds, targets)[:, -1] # 맨 끝 many-to-one
-        val_loss = torch.mean(val_losses) # 배치들을 평균
+        if self.args.leak == 0:
+            val_losses = self.loss_fn(preds, targets)[:, -1]
+            val_loss = torch.mean(val_losses)
+        else:
+            val_losses = self.loss_fn(preds, targets)
+            val_loss = torch.sum(val_losses)
 
         self.valid_auc(preds[:, -1], targets[:, -1].long())
         self.valid_acc(preds[:, -1], targets[:, -1].long())
@@ -79,7 +83,7 @@ class DKTLightning(pl.LightningModule):
     def on_predict_epoch_end(self, results):
         write_path = os.path.join(
             self.args.output_dir, 
-            f"{self.model.__class__.__name__}_{self.args.time_info}_K{self.args.k_i}_{self.args.leak}.csv"
+            f"{self.model.__class__.__name__}_{self.args.time_info}_K{self.args.k_i}_{self.args.leak}_FE{self.args.fe_num}.csv"
         )
 
         total_preds = torch.cat(results[0]).numpy()
