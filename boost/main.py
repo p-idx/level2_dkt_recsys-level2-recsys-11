@@ -4,6 +4,7 @@ from models import get_model
 from utils import setSeeds
 import os
 import datetime
+import wandb
 
 
 # import hydra
@@ -13,8 +14,11 @@ import datetime
 
 
 def main(args):
-    setSeeds(args.seed)
     args.time_info = (datetime.datetime.today() + datetime.timedelta(hours=9)).strftime('%m%d_%H%M')
+    wandb.init(entity='mkdir', project='boost', name=f'{args.model}_{args.fe_num}_{args.time_info}')
+    wandb.config.update(args)
+    setSeeds(args.seed)
+    
 
     cate_cols, train_data, test_data = get_data(args)
     X_train, X_valid, y_train, y_valid = data_split(train_data)
@@ -29,7 +33,7 @@ def main(args):
 
     # SAVE
     output_dir = './output/'
-    write_path = os.path.join(output_dir, f"{args.model}_{args.time_info}.csv")
+    write_path = os.path.join(output_dir, f"{args.model}_{args.fe_num}_{args.time_info}.csv")
 
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
