@@ -13,7 +13,6 @@ import datetime
 
 
 def main(args):
-
     setSeeds(args.seed)
     args.time_info = (datetime.datetime.today() + datetime.timedelta(hours=9)).strftime('%m%d_%H%M')
 
