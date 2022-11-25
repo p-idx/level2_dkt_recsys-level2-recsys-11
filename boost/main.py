@@ -14,12 +14,11 @@ import wandb
 
 
 def main(args):
-    args.time_info = (datetime.datetime.today() + datetime.timedelta(hours=9)).strftime('%m%d_%H%M')
+    
     wandb.init(entity='mkdir', project='boost', name=f'{args.model}_{args.fe_num}_{args.time_info}')
-    wandb.config.update(args)
     setSeeds(args.seed)
     
-
+    wandb.config.update(args)
     cate_cols, train_data, test_data = get_data(args)
     X_train, X_valid, y_train, y_valid = data_split(train_data)
 
@@ -46,27 +45,6 @@ def main(args):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        "--data_dir",
-        default="/opt/ml/data/",
-        type=str,
-        help="data directory",
-    )
-    parser.add_argument(
-        "--fe_num",
-        default='00',
-        type=str,
-        help='feature engineering data file path (ex) 00'
-    )
-    parser.add_argument("--model", default="CATB", type=str, help="model type")
-    parser.add_argument("--n_epochs", default=100, type=int, help="number of epochs")
-    parser.add_argument("--lr", default=0.1, type=float, help="learning rate")
-    parser.add_argument("--seed", default=42, type=int, help="seed")
-
-    parser.add_argument("--depth", default=6, type=int, help="depth of catboost")
-
-    args = parser.parse_args()
+    args = parse_args()
 
     main(args)
