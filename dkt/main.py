@@ -83,6 +83,8 @@ def main(args):
             torch_model = LSTM(args)
         elif args.model == 'GRU':
             torch_model = GRU(args)
+        elif args.model == 'GRUBI':
+            torch_model = GRUBI(args)
         elif args.model == 'GRUATT':
             torch_model = GRUATT(args)
         elif args.model == 'BERT':
@@ -97,7 +99,7 @@ def main(args):
 
         wandb_logger = WandbLogger( # 애가 wandb.init 비슷한거 다 해줌.
             entity='mkdir',
-            project='yang_att_test',
+            project='yang_bi_test',
             name=f"{args.model}_{args.fe_num}_{args.time_info}_K{args.k_i}_{args.leak}_FE{args.fe_num}",
         )
 
@@ -135,6 +137,7 @@ def main(args):
         preds = trainer.predict(lightning_model, test_loader)
         total_preds += torch.concat(preds).numpy()
         wandb.finish()
+        break
         
         
     # kfold mean ensemble
