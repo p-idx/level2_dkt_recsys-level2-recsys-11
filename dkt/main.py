@@ -95,7 +95,7 @@ def main(args):
 
         wandb_logger = WandbLogger(
             entity='mkdir',
-            project='sj2',
+            project='sj3',
             name=f"{args.model}_{args.time_info}_K{args.k_i}_{args.leak}_FE{args.fe_num}",
         )
 
