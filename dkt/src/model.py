@@ -133,6 +133,68 @@ class GRU(nn.Module):
         # final forward
         out = self.final_layer(hs)
         return out.squeeze(-1)
+    
+    
+class GRUBI(nn.Module):
+    def __init__(self, args):
+        super().__init__()
+        self.args = args
+        
+        # cate_x embedding
+        self.cate_emb_layer = nn.Embedding(args.offset, args.cate_emb_dim, padding_idx=0)
+        self.cate_proj_layer = nn.Sequential(
+            nn.Linear(args.cate_emb_dim * args.cate_num, args.cate_proj_dim),
+            nn.LayerNorm(args.cate_proj_dim)
+        )
+
+        # cont_x embedding
+        self.cont_proj_layer = nn.Sequential(
+            nn.Linear(args.cont_num, args.cont_proj_dim),
+            nn.LayerNorm(args.cont_proj_dim)
+        )
+
+        # cate_x + cont_x projection
+        self.comb_proj_layer = nn.Sequential(
+            nn.ReLU(),
+            nn.Linear(args.cate_proj_dim + args.cont_proj_dim, args.hidden_dim),
+            nn.LayerNorm(args.hidden_dim),
+        )
+
+        # gru 
+        self.gru_layer = \
+            nn.GRU(args.hidden_dim, args.hidden_dim, args.n_layers, batch_first=True, bidirectional=True)
+
+        # final layer
+        self.final_layer = nn.Sequential(
+            nn.Linear(args.hidden_dim  * 2, args.hidden_dim), # 원래는 (args.hidden_dim, args.hidden_dim)
+            nn.LayerNorm(args.hidden_dim),
+            nn.Dropout(args.drop_out),
+            nn.ReLU(),
+            nn.Linear(args.hidden_dim, 1)
+        )
+        
+    def forward(self, cate_x: torch.Tensor, cont_x: torch.Tensor, mask: torch.Tensor):
+        # cate forward
+        cate_emb_x = self.cate_emb_layer(cate_x)
+        cate_emb_x = cate_emb_x.view(cate_emb_x.size(0), self.args.max_seq_len, -1)
+        cate_proj_x = self.cate_proj_layer(cate_emb_x)
+
+        # cont forawrd
+        cont_proj_x = self.cont_proj_layer(cont_x)
+
+        # comb forward
+        comb_x = torch.cat([cate_proj_x, cont_proj_x], dim=2)
+        comb_proj_x = self.comb_proj_layer(comb_x)
+        
+        # gru forward
+        hs, _ = self.gru_layer(comb_proj_x)
+
+        # batch_first = True 이기 때문에.
+        hs = hs.contiguous().view(hs.size(0), -1, self.args.hidden_dim  * 2) # 뷰 안해줘도 되는데..?
+
+        # final forward
+        out = self.final_layer(hs)
+        return out.squeeze(-1)
 
 
 class GRUATT(nn.Module):
