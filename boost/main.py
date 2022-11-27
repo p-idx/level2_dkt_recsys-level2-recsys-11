@@ -5,6 +5,7 @@ from utils import setSeeds
 import os
 import datetime
 import wandb
+import pandas as pd
 
 
 # import hydra
@@ -25,7 +26,8 @@ def main(args):
     model = get_model(args)
     model.fit(X_train, y_train,
             eval_set=(X_valid, y_valid),
-            cat_features=cate_cols)
+            cat_features=cate_cols,
+            )
 
     predicts = model.predict(test_data)
 
@@ -41,6 +43,19 @@ def main(args):
         w.write("id,prediction\n")
         for id, p in enumerate(predicts):
             w.write('{},{}\n'.format(id,p))
+
+    print('log to wandb')
+    out = pd.read_csv('./catboost_info/test_error.tsv', delimiter ='\t')
+    wandb.define_metric("epochs")
+    wandb.define_metric("metric", step_metric="epochs")
+
+    for i in out.iter:
+        epoch, metric, _ = out.loc[i]
+        log_dict = {
+        "epochs": epoch,
+        "metric": metric,
+        }
+        wandb.log(log_dict)
 
 
 if __name__ == '__main__':

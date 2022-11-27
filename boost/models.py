@@ -14,12 +14,12 @@ def get_model(args):
         model = lgb.LGBMClassifier(**args.model_param, n_estimators=100, random_state=args.SEED)
 
     if model_name == 'CATB':
-        model = ctb.CatBoostClassifier(
-                                    objective = 'AUC',
+        model = ctb.CatBoostRegressor(
+                                    eval_metric='AUC',
                                     iterations=args.n_epochs,
                                     depth=args.depth,
                                     learning_rate=args.lr,
                                     verbose=50,
-                                    loss_function='CrossEntropy', #사용자 지정 로스도 가능한 모양
+                                    loss_function='RMSE', #사용자 지정 로스도 가능한 모양
                                     )
     return model
