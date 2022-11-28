@@ -1,7 +1,8 @@
-import argparse
+from args import parse_args
 from dataloader import get_data, data_split
 from models import get_model
 from utils import setSeeds
+import catboost as ctb
 import os
 import datetime
 import wandb
@@ -15,19 +16,34 @@ import pandas as pd
 
 
 def main(args):
-    
+    args.time_info = (datetime.datetime.today() + datetime.timedelta(hours=9)).strftime('%m%d_%H%M')
     wandb.init(entity='mkdir', project='boost', name=f'{args.model}_{args.fe_num}_{args.time_info}')
     setSeeds(args.seed)
     
     wandb.config.update(args)
+    
     cate_cols, train_data, test_data = get_data(args)
-    X_train, X_valid, y_train, y_valid = data_split(train_data)
+    print(train_data)
+    
+    if args.cat_cv:
+        cv_dataset = ctb.Pool(data=train_data.drop('answerCode', axis=1),
+                 label=train_data['answerCode'],
+                 cat_features=cate_cols
+                 )
+        
+        params = {"iterations": 300,
+          "depth": 5,
+          "loss_function": "Logloss",
+          "verbose": True}
 
+    X_train, X_valid, y_train, y_valid = data_split(train_data)
+    
     model = get_model(args)
     model.fit(X_train, y_train,
             eval_set=(X_valid, y_valid),
             cat_features=cate_cols,
             )
+    
 
     predicts = model.predict(test_data)
 
