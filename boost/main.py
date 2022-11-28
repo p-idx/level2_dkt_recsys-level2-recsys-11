@@ -1,7 +1,8 @@
-import argparse
+from args import parse_args
 from dataloader import get_data, data_split
 from models import get_model
 from utils import setSeeds
+import catboost as ctb
 import os
 import datetime
 import wandb
@@ -28,7 +29,19 @@ def main(args):
 
 
     cate_cols, train_data, test_data = get_data(args)
-    X_train, X_valid, y_train, y_valid = data_split(train_data, args.ratio)
+
+    if args.cat_cv:
+        cv_dataset = ctb.Pool(data=train_data.drop('answerCode', axis=1),
+                 label=train_data['answerCode'],
+                 cat_features=cate_cols
+                 )
+
+        params = {"iterations": 300,
+          "depth": 5,
+          "loss_function": "Logloss",
+          "verbose": True}
+
+    X_train, X_valid, y_train, y_valid = data_split(train_data)
 
     if args.model == 'LGB':
         lgb_train = lgb.Dataset(X_train, y_train)
@@ -60,7 +73,8 @@ def main(args):
 
 
 
-    predicts = model.predict(test_data)
+
+    predicts = model.predict_proba(test_data)
 
     # SAVE
     output_dir = './output/'
@@ -92,29 +106,6 @@ def main(args):
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        "--data_dir",
-        default="/opt/ml/data/",
-        type=str,
-        help="data directory",
-    )
-    parser.add_argument(
-        "--fe_num",
-        default='00',
-        type=str,
-        help='feature engineering data file path (ex) 00'
-    )
-    parser.add_argument("--model", default="CATB", type=str, help="model type: CATB, LGB, XGB")
-    parser.add_argument("--n_epochs", default=1000, type=int, help="number of epochs")
-    parser.add_argument("--lr", default=0.1, type=float, help="learning rate")
-    parser.add_argument("--seed", default=42, type=int, help="seed")
-    parser.add_argument("--ratio", default=0.3, type=float, help="test ratio")
-    parser.add_argument("--wandb", default=False, type=bool, help="use wandb")
-
-    parser.add_argument("--depth", default=6, type=int, help="depth of catboost")
-
-    args = parser.parse_args()
+    args = parse_args()
 
     main(args)
