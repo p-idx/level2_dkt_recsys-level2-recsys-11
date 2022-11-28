@@ -21,5 +21,8 @@ def get_model(args):
                                     learning_rate=args.lr,
                                     verbose=50,
                                     loss_function='RMSE', #사용자 지정 로스도 가능한 모양
+                                    od_type='IncToDec',
+                                    od_pval=10,
+                                    od_wait=50,
                                     )
     return model
