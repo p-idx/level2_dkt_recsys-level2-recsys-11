@@ -24,7 +24,7 @@ def main(args):
     
     cate_cols, train_data, test_data = get_data(args)
     print(train_data)
-    
+
     if args.cat_cv:
         cv_dataset = ctb.Pool(data=train_data.drop('answerCode', axis=1),
                  label=train_data['answerCode'],
@@ -35,17 +35,17 @@ def main(args):
           "depth": 5,
           "loss_function": "Logloss",
           "verbose": True}
-
+        
     X_train, X_valid, y_train, y_valid = data_split(train_data)
     
     model = get_model(args)
     model.fit(X_train, y_train,
             eval_set=(X_valid, y_valid),
-            cat_features=cate_cols,
+            cat_features=['userID']+cate_cols,
             )
     
 
-    predicts = model.predict(test_data)
+    predicts = model.predict_proba(test_data)
 
     # SAVE
     output_dir = './output/'
