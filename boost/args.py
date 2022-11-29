@@ -20,6 +20,10 @@ def parse_args():
     parser.add_argument("--n_epochs", default=100, type=int, help="number of epochs")
     parser.add_argument("--lr", default=0.1, type=float, help="learning rate")
     parser.add_argument("--seed", default=42, type=int, help="seed")
+    parser.add_argument("--wandb", default=False, type=bool, help="use wandb")
+    parser.add_argument("--ratio", default=0.3, type=float, help="test ratio")
+
+
 
     parser.add_argument("--depth", default=6, type=int, help="depth of catboost")
     

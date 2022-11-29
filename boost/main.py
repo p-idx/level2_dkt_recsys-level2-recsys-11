@@ -41,7 +41,7 @@ def main(args):
           "loss_function": "Logloss",
           "verbose": True}
 
-    X_train, X_valid, y_train, y_valid = data_split(train_data)
+    X_train, X_valid, y_train, y_valid = data_split(train_data, args.ratio)
 
     if args.model == 'LGB':
         lgb_train = lgb.Dataset(X_train, y_train)
