@@ -16,7 +16,7 @@ def parse_args():
         help='feature engineering data file path (ex) 00'
     )
     parser.add_argument("--model", default="CATB", type=str, help="model type")
-    parser.add_argument("--cat_cv", default="False", type=bool, help="cross validation of catboost")
+    parser.add_argument("--cat_cv", default=False, type=bool, help="cross validation of catboost")
     parser.add_argument("--n_epochs", default=100, type=int, help="number of epochs")
     parser.add_argument("--lr", default=0.1, type=float, help="learning rate")
     parser.add_argument("--verbose", default=50, type=int, help="number of verbose")
