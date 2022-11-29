@@ -22,14 +22,14 @@ class DKTLightning(pl.LightningModule):
         
     def training_step(self, batch: tuple, batch_idx) -> torch.Tensor:
         cate_x, cont_x, mask, targets = batch
-        preds = self.model(cate_x, cont_x, mask)
+        preds = self.model(cate_x, cont_x, mask, targets)
 
         if self.args.leak == 0:
             losses = self.loss_fn(preds, targets)[:, -1]
             loss = torch.mean(losses)
         else:
             losses = self.loss_fn(preds, targets)
-            loss = torch.sum(losses)
+            loss = torch.mean(losses)
 
         self.train_auc(preds[:, -1], targets[:, -1].long())
         self.train_acc(preds[:, -1], targets[:, -1].long())
@@ -48,17 +48,21 @@ class DKTLightning(pl.LightningModule):
         )
         return {
             "optimizer": optimizer, 
-            # "lr_scheduler": scheduler,
-            # 'monitor': 'valid_loss' # 다른거 아무거나 쓰면 안됨. 실행시 뭐만 쓸수있다 알아서 익셉션줌. 굳
+            "lr_scheduler": scheduler,
+            'monitor': 'valid_loss' # 다른거 아무거나 쓰면 안됨. 실행시 뭐만 쓸수있다 알아서 익셉션줌. 굳
         }
         
     
     def validation_step(self, batch, batch_idx):
         cate_x, cont_x, mask, targets = batch
-        preds = self.model(cate_x, cont_x, mask)
+        preds = self.model(cate_x, cont_x, mask, targets)
 
-        val_losses = self.loss_fn(preds, targets)[:, -1] # 맨 끝 many-to-one
-        val_loss = torch.mean(val_losses) # 배치들을 평균
+        if self.args.leak == 0:
+            val_losses = self.loss_fn(preds, targets)[:, -1]
+            val_loss = torch.mean(val_losses)
+        else:
+            val_losses = self.loss_fn(preds, targets)
+            val_loss = torch.mean(val_losses)
 
         self.valid_auc(preds[:, -1], targets[:, -1].long())
         self.valid_acc(preds[:, -1], targets[:, -1].long())
@@ -71,7 +75,7 @@ class DKTLightning(pl.LightningModule):
     
     def predict_step(self, batch, batch_idx: int):
         cate_x, cont_x, mask, targets = batch
-        preds = self.model(cate_x, cont_x, mask)
+        preds = self.model(cate_x, cont_x, mask, targets)
         preds = torch.sigmoid(preds[:, -1]) # 안해줘도 제출 시 거기서도 torchmetric 으로 할것같은 느낌임.
         return preds.detach().cpu()
     
@@ -79,7 +83,7 @@ class DKTLightning(pl.LightningModule):
     def on_predict_epoch_end(self, results):
         write_path = os.path.join(
             self.args.output_dir, 
-            f"{self.model.__class__.__name__}_{self.args.time_info}_K{self.args.k_i}_{self.args.leak}.csv"
+            f"{self.model.__class__.__name__}_{self.args.time_info}_K{self.args.k_i}_{self.args.leak}_FE{self.args.fe_num}.csv"
         )
 
         total_preds = torch.cat(results[0]).numpy()

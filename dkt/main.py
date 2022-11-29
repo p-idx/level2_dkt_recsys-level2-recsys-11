@@ -4,7 +4,7 @@ import datetime
 from args import parse_args
 from src.dataloader import DKTDataset, load_data
 from src.utils import setSeeds
-from src.model import LSTM, GRU, BERT
+from src.model import LSTM, GRU, GRUBI, GRUATT, BERT, S2SGRU
 from src.lightning_model import DKTLightning
 
 import numpy as np
@@ -15,12 +15,12 @@ import pytorch_lightning as pl
 from pytorch_lightning.loggers.wandb import WandbLogger
 from pytorch_lightning.callbacks.early_stopping import EarlyStopping
 from pytorch_lightning.callbacks.model_checkpoint import ModelCheckpoint
-from sklearn.model_selection import train_test_split, KFold
+from sklearn.model_selection import train_test_split, KFold, StratifiedKFold
 import wandb
 
 
 def main(args):
-    wandb.login()
+    # wandb.login()
 
     setSeeds(args.seed)
 
@@ -30,11 +30,7 @@ def main(args):
     if not os.path.exists(args.model_dir):
         os.makedirs(args.model_dir)
 
-
-    # 모델 체크포인트 시 트레인 끝내고 그 탑 모델로 인퍼런스 하는지 확인결과 그 탑 모델로 예측함.
-    # 직접 체크포인터 뽑아서 로드해서 테스트해서 비교해봄.
-
-    # test_data ready
+    # test_data, test_dataset, test_dataloader ready
     test_data = load_data(args, is_train=False)
     test_dataset = DKTDataset(test_data, args)
     test_loader = DataLoader(
@@ -46,17 +42,25 @@ def main(args):
 
     # train_data ready
     train_data = load_data(args, is_train=True)
-    
-    kf = KFold(n_splits=5, shuffle=True, random_state=args.seed)
+    for_stratify = []
+    for user_info in train_data:
+        for col in user_info:
+            if col.name == 'answerCode':
+                for_stratify.append(col.iloc[-1])
+
+
+    kf = StratifiedKFold(n_splits=5, shuffle=False)
     total_preds = np.zeros(len(test_data), dtype=np.float32)
-    for i, (train_index, valid_index) in enumerate(kf.split(train_data)):
+    for i, (train_index, valid_index) in enumerate(kf.split(train_data, for_stratify)):
         # train_data_fold ready
         train_data_fold = train_data.iloc[train_index]
         valid_data_fold = train_data.iloc[valid_index]
 
+        # train_data_fold dataset ready
         train_dataset = DKTDataset(train_data_fold, args)
         valid_dataset = DKTDataset(valid_data_fold, args)
 
+        # train_data_fold dataloader ready
         train_loader = DataLoader(
             train_dataset,
             num_workers=args.num_workers,
@@ -76,20 +80,26 @@ def main(args):
             torch_model = LSTM(args)
         elif args.model == 'GRU':
             torch_model = GRU(args)
+        elif args.model == 'GRUBI':
+            torch_model = GRUBI(args)
+        elif args.model == 'GRUATT':
+            torch_model = GRUATT(args)
         elif args.model == 'BERT':
             torch_model = BERT(args)
+        elif args.model == 'S2SGRU':
+            torch_model = S2SGRU(args)
 
-        lightning_model = DKTLightning(args, torch_model)
+        lightning_model = DKTLightning(args, torch_model.to('cuda'))
 
         write_path = os.path.join(
             args.model_dir,
-            f"{args.model}_{args.fe_num}_{args.time_info}_K{args.k_i}_{args.leak}/"
+            f"{args.model}_{args.time_info}_K{args.k_i}_{args.leak}_FE{args.fe_num}/"
         )
 
         wandb_logger = WandbLogger( # 애가 wandb.init 비슷한거 다 해줌.
             entity='mkdir',
-            project='yang8',
-            name=f"{args.model}_{args.fe_num}_{args.time_info}_K{args.k_i}_{args.leak}",
+            project='yang_s2s_test',
+            name=f"{args.model}_{args.fe_num}_{args.time_info}_K{args.k_i}_{args.leak}_FE{args.fe_num}",
         )
 
         wandb_logger.experiment.config.update(args)
@@ -108,9 +118,9 @@ def main(args):
                 ),
                 ModelCheckpoint(
                     dirpath=write_path,
-                    monitor="valid_loss",
-                    filename=os.path.join(write_path, "loss_min"),
-                    mode="min",
+                    monitor="valid_auc",
+                    filename=os.path.join(write_path, "valid_auc_max"),
+                    mode="max",
                     save_top_k=1,
                 ),
             ],
@@ -126,12 +136,13 @@ def main(args):
         preds = trainer.predict(lightning_model, test_loader)
         total_preds += torch.concat(preds).numpy()
         wandb.finish()
-    
+        # break
+        
         
     # kfold mean ensemble
     write_path = os.path.join(
         args.output_dir, 
-        f"{args.model}_{args.time_info}_M_{args.leak}.csv"
+        f"{args.model}_{args.time_info}_M_{args.leak}_FE{args.fe_num}.csv"
     )
 
     total_preds /= 5
