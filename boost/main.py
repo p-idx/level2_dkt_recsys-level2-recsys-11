@@ -7,6 +7,7 @@ import os
 import datetime
 import wandb
 import pandas as pd
+import numpy as np
 
 
 # import hydra
@@ -22,56 +23,104 @@ def main(args):
     
     wandb.config.update(args)
     
+    print('------------------------load data------------------------')
     cate_cols, train_data, test_data = get_data(args)
-    print(train_data)
-
-    if args.cat_cv:
-        cv_dataset = ctb.Pool(data=train_data.drop('answerCode', axis=1),
-                 label=train_data['answerCode'],
-                 cat_features=cate_cols
-                 )
-        
-        params = {"iterations": 300,
-          "depth": 5,
-          "loss_function": "Logloss",
-          "verbose": True}
-        
+    
+    
     X_train, X_valid, y_train, y_valid = data_split(train_data)
     
-    model = get_model(args)
-    model.fit(X_train, y_train,
-            eval_set=(X_valid, y_valid),
-            cat_features=['userID']+cate_cols,
-            )
+    if args.cat_cv:
+        cv_dataset = ctb.Pool(
+                data=train_data.drop('answerCode', axis=1),
+                label=train_data['answerCode'],
+                cat_features=['userID']+cate_cols
+                )
+        
+        params = {"iterations": args.n_epochs,
+          "depth": args.depth,
+          "loss_function": "Logloss",
+          "verbose": args.verbose,
+          "learning_rate": args.lr,
+          "roc_file": "roc-file",
+          "eval_metric": "AUC",
+          "roc_file": "roc-file",
+        #   "eval_set": eval_dataset
+          }
+        print('------------------------train model------------------------')
+        _, model_list = ctb.cv(cv_dataset,
+               params,
+               fold_count=5,
+               return_models=True
+               )
+        outputs = []
+        print('------------------------predict------------------------')
+        for model in model_list:
+            pred = model.predict(test_data, prediction_type='Probability')
+            
+            # argmax로 regress처럼 값 만들기
+            output = []
+            for i,v in enumerate(np.argmax(pred, axis=1)):
+                if v == 0:
+                    output.append(1 - pred[i][v])
+                else:
+                    output.append(pred[i][v])
+                
+            outputs.append(output)
+        # print(outputs)
+        predicts = np.mean(outputs, axis=0)
+            
+
+        # pred = np.mean( outputs , axis = 0 )
+        
+        print('------------------------save prediction------------------------')
+        output_dir = './output/'
+        write_path = os.path.join(output_dir, f"{args.model}_{args.fe_num}_{args.time_info}.csv")
+
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+
+        with open(write_path, 'w', encoding='utf8') as w:
+            print("writing prediction : {}".format(write_path))
+            w.write("id,prediction\n")
+            for id, p in enumerate(predicts):
+                w.write('{},{}\n'.format(id,p))
+        raise RuntimeError
     
+    else:
+        model = get_model(args)
+        model.fit(X_train, y_train,
+                eval_set=(X_valid, y_valid),
+                cat_features=['userID']+cate_cols,
+                )
+        
 
-    predicts = model.predict_proba(test_data)
+        predicts = model.predict_proba(test_data)
 
-    # SAVE
-    output_dir = './output/'
-    write_path = os.path.join(output_dir, f"{args.model}_{args.fe_num}_{args.time_info}.csv")
+        # SAVE
+        output_dir = './output/'
+        write_path = os.path.join(output_dir, f"{args.model}_{args.fe_num}_{args.time_info}.csv")
 
-    if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
 
-    with open(write_path, 'w', encoding='utf8') as w:
-        print("writing prediction : {}".format(write_path))
-        w.write("id,prediction\n")
-        for id, p in enumerate(predicts):
-            w.write('{},{}\n'.format(id,p))
+        with open(write_path, 'w', encoding='utf8') as w:
+            print("writing prediction : {}".format(write_path))
+            w.write("id,prediction\n")
+            for id, p in enumerate(predicts):
+                w.write('{},{}\n'.format(id,p))
 
-    print('log to wandb')
-    out = pd.read_csv('./catboost_info/test_error.tsv', delimiter ='\t')
-    wandb.define_metric("epochs")
-    wandb.define_metric("metric", step_metric="epochs")
+        print('log to wandb')
+        out = pd.read_csv('./catboost_info/test_error.tsv', delimiter ='\t')
+        wandb.define_metric("epochs")
+        wandb.define_metric("metric", step_metric="epochs")
 
-    for i in out.iter:
-        epoch, metric, _ = out.loc[i]
-        log_dict = {
-        "epochs": epoch,
-        "metric": metric,
-        }
-        wandb.log(log_dict)
+        for i in out.iter:
+            epoch, metric, _ = out.loc[i]
+            log_dict = {
+            "epochs": epoch,
+            "metric": metric,
+            }
+            wandb.log(log_dict)
 
 
 if __name__ == '__main__':
