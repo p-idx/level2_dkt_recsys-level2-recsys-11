@@ -71,8 +71,8 @@ class FeatureEngineer:
         print(f'[{self.__class__.__name__}] feature engineering...')
         fe_train_df, fe_test_df = self.feature_engineering(self.base_train_df, self.base_test_df)
 
-        # fe_train_df = fe_train_df.drop(['Timestamp'], axis=1)
-        # fe_test_df = fe_test_df.drop(['Timestamp'], axis=1)
+        fe_train_df = fe_train_df.drop(['Timestamp'], axis=1)
+        fe_test_df = fe_test_df.drop(['Timestamp'], axis=1)
 
         print(f'[{self.__class__.__name__}] save...')
         fe_train_df.to_csv(os.path.join(BASE_DATA_PATH, self.__class__.__name__, 'train_data.csv'), index=False)
@@ -550,8 +550,8 @@ class FE06(FeatureEngineer):
         # test_df = pd.read_csv('../data/test_data.csv')
         train_df['Timestamp'] = pd.to_datetime(train_df['Timestamp'], format="%Y-%m-%d %H:%M:%S")
         test_df['Timestamp'] = pd.to_datetime(test_df['Timestamp'], format="%Y-%m-%d %H:%M:%S")
-        train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-        test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
+        train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode'].fillna(-1)
+        test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode'].fillna(-1)
 
         diff = train_df.loc[:, ['userID','testId','Timestamp']].groupby(['userID','testId']).diff().fillna(pd.Timedelta(seconds=0))
         diff = diff['Timestamp'].apply(lambda x: x.total_seconds())
@@ -729,8 +729,8 @@ class FE07(FeatureEngineer):
         # test_df = pd.read_csv('../data/test_data.csv')
         train_df['Timestamp'] = pd.to_datetime(train_df['Timestamp'], format="%Y-%m-%d %H:%M:%S")
         test_df['Timestamp'] = pd.to_datetime(test_df['Timestamp'], format="%Y-%m-%d %H:%M:%S")
-        train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-        test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
+        train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode'].fillna(-1)
+        test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode'].fillna(-1)
 
         diff = train_df.loc[:, ['userID','testId','Timestamp']].groupby(['userID','testId']).diff().fillna(pd.Timedelta(seconds=0))
         diff = diff['Timestamp'].apply(lambda x: x.total_seconds())
@@ -963,8 +963,8 @@ class FE08(FeatureEngineer):
         # test_df = pd.read_csv('../data/test_data.csv')
         train_df['Timestamp'] = pd.to_datetime(train_df['Timestamp'], format="%Y-%m-%d %H:%M:%S")
         test_df['Timestamp'] = pd.to_datetime(test_df['Timestamp'], format="%Y-%m-%d %H:%M:%S")
-        train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-        test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
+        train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode'].fillna(-1)
+        test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode'].fillna(-1)
 
         diff = train_df.loc[:, ['userID','testId','Timestamp']].groupby(['userID','testId']).diff().fillna(pd.Timedelta(seconds=0))
         diff = diff['Timestamp'].apply(lambda x: x.total_seconds())
@@ -1197,20 +1197,20 @@ class FE09(FeatureEngineer):
         # test_df = pd.read_csv('../data/test_data.csv')
         train_df['Timestamp'] = pd.to_datetime(train_df['Timestamp'], format="%Y-%m-%d %H:%M:%S")
         test_df['Timestamp'] = pd.to_datetime(test_df['Timestamp'], format="%Y-%m-%d %H:%M:%S")
-        train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-        test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
+        train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode'].fillna(-1).astype(np.int16)
+        test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode'].fillna(-1).astype(np.int16)
         # interaction2
-        train_df['interaction_2'] = train_df.groupby(['userID','testId'])[['answerCode']].shift(2)['answerCode']
-        test_df['interaction_2'] = test_df.groupby(['userID','testId'])[['answerCode']].shift(2)['answerCode']
+        train_df['interaction_2'] = train_df.groupby(['userID','testId'])[['answerCode']].shift(2)['answerCode'].fillna(-1).astype(np.int16)
+        test_df['interaction_2'] = test_df.groupby(['userID','testId'])[['answerCode']].shift(2)['answerCode'].fillna(-1).astype(np.int16)
         # interaction3
-        train_df['interaction_3'] = train_df.groupby(['userID','testId'])[['answerCode']].shift(3)['answerCode']
-        test_df['interaction_3'] = test_df.groupby(['userID','testId'])[['answerCode']].shift(3)['answerCode']
+        train_df['interaction_3'] = train_df.groupby(['userID','testId'])[['answerCode']].shift(3)['answerCode'].fillna(-1).astype(np.int16)
+        test_df['interaction_3'] = test_df.groupby(['userID','testId'])[['answerCode']].shift(3)['answerCode'].fillna(-1).astype(np.int16)
         # interaction4
-        train_df['interaction_4'] = train_df.groupby(['userID','testId'])[['answerCode']].shift(4)['answerCode']
-        test_df['interaction_4'] = test_df.groupby(['userID','testId'])[['answerCode']].shift(4)['answerCode']
+        train_df['interaction_4'] = train_df.groupby(['userID','testId'])[['answerCode']].shift(4)['answerCode'].fillna(-1).astype(np.int16)
+        test_df['interaction_4'] = test_df.groupby(['userID','testId'])[['answerCode']].shift(4)['answerCode'].fillna(-1).astype(np.int16)
         # interaction5
-        train_df['interaction_5'] = train_df.groupby(['userID','testId'])[['answerCode']].shift(5)['answerCode']
-        test_df['interaction_5'] = test_df.groupby(['userID','testId'])[['answerCode']].shift(5)['answerCode']
+        train_df['interaction_5'] = train_df.groupby(['userID','testId'])[['answerCode']].shift(5)['answerCode'].fillna(-1).astype(np.int16)
+        test_df['interaction_5'] = test_df.groupby(['userID','testId'])[['answerCode']].shift(5)['answerCode'].fillna(-1).astype(np.int16)
 
 
         diff = train_df.loc[:, ['userID','testId','Timestamp']].groupby(['userID','testId']).diff().fillna(pd.Timedelta(seconds=0))
@@ -1383,10 +1383,10 @@ class FE09(FeatureEngineer):
                 'testId' : 'testId_c', # 기본 2
                 'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
                 'interaction' : 'interaction_c',
-                'interaction2' : 'interaction2_c',
-                'interaction3' : 'interaction3_c',
-                'interaction4' : 'interaction4_c',
-                'interaction5' : 'interaction5_c',
+                'interaction_2' : 'interaction_2_c',
+                'interaction_3' : 'interaction_3_c',
+                'interaction_4' : 'interaction_4_c',
+                'interaction_5' : 'interaction_5_c',
                 'user_grade' : 'user_grade_c',
                 'ass_grade' : 'ass_grade_c',
                 'ass_solved' : 'ass_solved_c',
@@ -1401,10 +1401,10 @@ class FE09(FeatureEngineer):
                 'testId' : 'testId_c', # 기본 2
                 'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
                 'interaction' : 'interaction_c',
-                'interaction2' : 'interaction2_c',
-                'interaction3' : 'interaction3_c',
-                'interaction4' : 'interaction4_c',
-                'interaction5' : 'interaction5_c',
+                'interaction_2' : 'interaction_2_c',
+                'interaction_3' : 'interaction_3_c',
+                'interaction_4' : 'interaction_4_c',
+                'interaction_5' : 'interaction_5_c',
                 'user_grade' : 'user_grade_c',
                 'ass_grade' : 'ass_grade_c',
                 'ass_solved' : 'ass_solved_c',
