@@ -1,0 +1,18 @@
+LightGBM parameters
+
+lgb_reg_params = {
+    'objective':'rmse',
+    'n_estimators':     args.N_EST,
+    'learning_rate':    hp.loguniform('learning_rate', np.log(0.05), np.log(0.3)),
+    'max_depth':        hp.choice('max_depth',        np.arange(*args.MAX_DEPTH)),
+    'min_child_weight': hp.choice('min_child_weight', np.arange(*args.MIN_CHILD_W)),
+    'colsample_bytree': hp.uniform('colsample_bytree', 0.1, 0.5),
+    'subsample':        hp.uniform('subsample', 0.8, 1),
+    'reg_lambda':       hp.uniform('reg_lambda', *args.LGBM_LAMBDA),
+    'random_state': args.SEED
+}
+lgb_fit_params = {
+    'eval_metric': 'rmse',
+    'early_stopping_rounds': 100,
+    'verbose': False
+}
