@@ -19,10 +19,10 @@ def get_model(args):
                                     iterations=args.n_epochs,
                                     depth=args.depth,
                                     learning_rate=args.lr,
-                                    verbose=50,
+                                    verbose=args.verbose,
                                     loss_function='Logloss', #사용자 지정 로스도 가능한 모양
                                     od_type='IncToDec',
-                                    od_pval=10,
-                                    od_wait=50,
+                                    od_pval=args.od_pval,
+                                    od_wait=args.od_wait,
                                     )
     return model

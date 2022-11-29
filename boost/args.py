@@ -19,6 +19,10 @@ def parse_args():
     parser.add_argument("--cat_cv", default="False", type=bool, help="cross validation of catboost")
     parser.add_argument("--n_epochs", default=100, type=int, help="number of epochs")
     parser.add_argument("--lr", default=0.1, type=float, help="learning rate")
+    parser.add_argument("--verbose", default=50, type=int, help="number of verbose")
+    parser.add_argument("--od_pval", default=10, type=int, help="catboost's od_pval")
+    parser.add_argument("--od_wait", default=10, type=int, help="catboost's od_wait")
+    
     parser.add_argument("--seed", default=42, type=int, help="seed")
     parser.add_argument("--wandb", default=False, type=bool, help="use wandb")
     parser.add_argument("--ratio", default=0.3, type=float, help="test ratio")
