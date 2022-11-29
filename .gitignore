@@ -13,4 +13,5 @@ weight/
 *.ckpt
 *.out
 *.output
-data/
+catboost_info/
+.empty/
