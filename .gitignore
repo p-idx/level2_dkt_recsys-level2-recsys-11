@@ -13,4 +13,4 @@ weight/
 *.ckpt
 *.out
 *.output
-
+data/

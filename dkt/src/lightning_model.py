@@ -22,7 +22,7 @@ class DKTLightning(pl.LightningModule):
         
     def training_step(self, batch: tuple, batch_idx) -> torch.Tensor:
         cate_x, cont_x, mask, targets = batch
-        preds = self.model(cate_x, cont_x, mask)
+        preds = self.model(cate_x, cont_x, mask, targets)
 
         if self.args.leak == 0:
             losses = self.loss_fn(preds, targets)[:, -1]
@@ -55,7 +55,7 @@ class DKTLightning(pl.LightningModule):
     
     def validation_step(self, batch, batch_idx):
         cate_x, cont_x, mask, targets = batch
-        preds = self.model(cate_x, cont_x, mask)
+        preds = self.model(cate_x, cont_x, mask, targets)
 
         if self.args.leak == 0:
             val_losses = self.loss_fn(preds, targets)[:, -1]
@@ -75,7 +75,7 @@ class DKTLightning(pl.LightningModule):
     
     def predict_step(self, batch, batch_idx: int):
         cate_x, cont_x, mask, targets = batch
-        preds = self.model(cate_x, cont_x, mask)
+        preds = self.model(cate_x, cont_x, mask, targets)
         preds = torch.sigmoid(preds[:, -1]) # 안해줘도 제출 시 거기서도 torchmetric 으로 할것같은 느낌임.
         return preds.detach().cpu()
     

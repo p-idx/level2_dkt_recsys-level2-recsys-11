@@ -9,23 +9,62 @@ from transformers.models.bert.modeling_bert import (
         BertModel,
 )
 
+class CateEmbeddingProjector(nn.Module):
+    def __init__(self, args):
+        super().__init__()
+        self.args = args
+        if args.emb_separate:
+            self.emb_layers = \
+                nn.ModuleList(
+                    [nn.Embedding(int(offset), int(np.log2(offset)), padding_idx=0) for offset in args.offsets]
+                )
+                # 오프셋들의 개수가 곧 cate_num
+                # 그냥 리스트로 감싸면 파이토치가 디바이스 인식을 못함.
+            self.proj_layer = nn.Sequential(
+                nn.Linear(sum([int(np.log2(offset)) for offset in args.offsets]), args.cate_proj_dim),
+                nn.LayerNorm(args.cate_proj_dim)
+            )
+        else:
+            self.emb_layer = nn.Embedding(args.offset, args.cate_emb_dim, padding_idx=0)
+            self.proj_layer = nn.Sequential(
+                nn.Linear(args.cate_emb_dim * args.cate_num, args.cate_proj_dim),
+                nn.LayerNorm(args.cate_proj_dim)
+            )
+
+
+    def forward(self, cate_x):
+        if self.args.emb_separate:
+            embs = [layer(cate_x[:, :, i]) for i, layer in enumerate(self.emb_layers)]
+            embs_x = torch.cat(embs, dim=-1)
+            proj_x = self.proj_layer(embs_x)
+        else:
+            emb_x = self.emb_layer(cate_x)
+            emb_x = emb_x.view(emb_x.size(0), self.args.max_seq_len, -1)
+            proj_x = self.proj_layer(emb_x)
+        return proj_x
+
+
+class ContEmbeddingProjector(nn.Module):
+    def __init__(self, args):
+        super().__init__()
+        self.args = args
+        self.proj_layer = nn.Sequential(
+            nn.Linear(args.cont_num, args.cont_proj_dim),
+            nn.LayerNorm(args.cont_proj_dim)
+        )
+
+    def forward(self, cont_x):
+        proj_x = self.proj_layer(cont_x)
+        return proj_x
+
+
 class LSTM(nn.Module):
     def __init__(self, args):
         super().__init__()
         self.args = args
         
-        # cate_x embedding
-        self.cate_emb_layer = nn.Embedding(args.offset, args.cate_emb_dim, padding_idx=0)
-        self.cate_proj_layer = nn.Sequential(
-            nn.Linear(args.cate_emb_dim * args.cate_num, args.cate_proj_dim),
-            nn.LayerNorm(args.cate_proj_dim)
-        )
-
-        # cont_x embedding
-        self.cont_proj_layer = nn.Sequential(
-            nn.Linear(args.cont_num, args.cont_proj_dim),
-            nn.LayerNorm(args.cont_proj_dim)
-        )
+        self.cate_emb_proj_layer = CateEmbeddingProjector(args)
+        self.cont_emb_proj_layer = ContEmbeddingProjector(args)
 
         # cate_x + cont_x projection
         self.comb_proj_layer = nn.Sequential(
@@ -47,14 +86,9 @@ class LSTM(nn.Module):
             nn.Linear(args.hidden_dim, 1)
         )
         
-    def forward(self, cate_x: torch.Tensor, cont_x: torch.Tensor, mask: torch.Tensor):
-        # cate forward
-        cate_emb_x = self.cate_emb_layer(cate_x)
-        cate_emb_x = cate_emb_x.view(cate_emb_x.size(0), self.args.max_seq_len, -1)
-        cate_proj_x = self.cate_proj_layer(cate_emb_x)
-
-        # cont forawrd
-        cont_proj_x = self.cont_proj_layer(cont_x)
+    def forward(self, cate_x: torch.Tensor, cont_x: torch.Tensor, mask: torch.Tensor, targets):
+        cate_proj_x = self.cate_emb_proj_layer(cate_x)
+        cont_proj_x = self.cont_emb_proj_layer(cont_x)
 
         # comb forward
         comb_x = torch.cat([cate_proj_x, cont_proj_x], dim=2)
@@ -78,18 +112,8 @@ class GRU(nn.Module):
         super().__init__()
         self.args = args
         
-        # cate_x embedding
-        self.cate_emb_layer = nn.Embedding(args.offset, args.cate_emb_dim, padding_idx=0)
-        self.cate_proj_layer = nn.Sequential(
-            nn.Linear(args.cate_emb_dim * args.cate_num, args.cate_proj_dim),
-            nn.LayerNorm(args.cate_proj_dim)
-        )
-
-        # cont_x embedding
-        self.cont_proj_layer = nn.Sequential(
-            nn.Linear(args.cont_num, args.cont_proj_dim),
-            nn.LayerNorm(args.cont_proj_dim)
-        )
+        self.cate_emb_proj_layer = CateEmbeddingProjector(args)
+        self.cont_emb_proj_layer = ContEmbeddingProjector(args)
 
         # cate_x + cont_x projection
         self.comb_proj_layer = nn.Sequential(
@@ -111,14 +135,9 @@ class GRU(nn.Module):
             nn.Linear(args.hidden_dim, 1)
         )
         
-    def forward(self, cate_x: torch.Tensor, cont_x: torch.Tensor, mask: torch.Tensor):
-        # cate forward
-        cate_emb_x = self.cate_emb_layer(cate_x)
-        cate_emb_x = cate_emb_x.view(cate_emb_x.size(0), self.args.max_seq_len, -1)
-        cate_proj_x = self.cate_proj_layer(cate_emb_x)
-
-        # cont forawrd
-        cont_proj_x = self.cont_proj_layer(cont_x)
+    def forward(self, cate_x: torch.Tensor, cont_x: torch.Tensor, mask: torch.Tensor, targets):
+        cate_proj_x = self.cate_emb_proj_layer(cate_x)
+        cont_proj_x = self.cont_emb_proj_layer(cont_x)
 
         # comb forward
         comb_x = torch.cat([cate_proj_x, cont_proj_x], dim=2)
@@ -133,6 +152,110 @@ class GRU(nn.Module):
         # final forward
         out = self.final_layer(hs)
         return out.squeeze(-1)
+
+
+class GRUEncoder(nn.Module):
+    def __init__(self, args):
+        super().__init__()
+        self.args = args
+
+        self.gru = \
+            nn.GRU(args.hidden_dim, args.hidden_dim, args.n_layers, bidirectional=True)
+        self.fc = nn.Sequential(
+            nn.Linear(args.hidden_dim * 2, args.hidden_dim),
+            nn.LayerNorm(args.hidden_dim)
+        )
+        
+    def forward(self, comb_proj_x_t):
+        outputs, hidden = self.gru(comb_proj_x_t)
+        hidden = self.fc(torch.cat([hidden[0:self.args.n_layers], hidden[self.args.n_layers: self.args.n_layers * 2]], dim=2))
+        return outputs, hidden
+    
+
+class GRUDecoder(nn.Module):
+    def __init__(self, args):
+        super().__init__()
+        self.args = args
+
+        self.gru = \
+            nn.GRU(args.hidden_dim * 2 + args.hidden_dim, args.hidden_dim, args.n_layers)
+
+        self.energy = nn.Sequential(
+            nn.Linear(args.hidden_dim * 3, 1),
+            nn.ReLU(),
+            nn.Softmax(dim=0)
+        )
+        
+    def forward(self, encoder_states, comb_proj_x_t, hidden):
+        
+        h_reshape = hidden.repeat(encoder_states.size(0) // self.args.n_layers, 1, 1)
+        # outputs, hidden = self.gru(comb_proj_x_t, hidden)
+
+        attention = self.energy(torch.cat([h_reshape, encoder_states], dim=2))
+        # (S, B, 1)
+        attention = attention.permute(1, 2, 0)
+        # (B, 1, S)
+        encoder_states = encoder_states.permute(1, 0, 2)
+        # (B, S, hidden_dim * 2)
+
+        context_vector = torch.bmm(attention, encoder_states).permute(1, 0, 2)
+        # (B, 1, hidden_dim * 2) --> (1, B, hidden_dim * 2)
+        context_vector = context_vector.repeat(comb_proj_x_t.size(0), 1, 1)
+        gru_input = torch.cat([context_vector, comb_proj_x_t], dim=2)
+
+        outputs, hidden = self.gru(gru_input, hidden)
+        
+        return outputs, hidden
+    
+
+class S2SGRU(nn.Module):
+    def __init__(self, args):
+        super().__init__()
+        self.args = args
+        
+        self.cate_emb_proj_layer = CateEmbeddingProjector(args)
+        self.cont_emb_proj_layer = ContEmbeddingProjector(args)
+
+        # cate_x + cont_x projection
+        self.comb_proj_layer = nn.Sequential(
+            nn.ReLU(),
+            nn.Linear(args.cate_proj_dim + args.cont_proj_dim, args.hidden_dim),
+            nn.LayerNorm(args.hidden_dim),
+        )
+
+        # gru encoder
+        self.encoder = GRUEncoder(args)
+        self.decoder = GRUDecoder(args)
+
+        # final layer
+        self.final_layer = nn.Sequential(
+            nn.Linear(args.hidden_dim, args.hidden_dim), # 원래는 (args.hidden_dim, args.hidden_dim)
+            nn.LayerNorm(args.hidden_dim),
+            nn.Dropout(args.drop_out),
+            nn.ReLU(),
+            nn.Linear(args.hidden_dim, 1)
+        )
+        
+    def forward(self, cate_x: torch.Tensor, cont_x: torch.Tensor, mask: torch.Tensor, targets):
+        cate_proj_x = self.cate_emb_proj_layer(cate_x)
+        cont_proj_x = self.cont_emb_proj_layer(cont_x)
+
+        # comb forward
+        comb_x = torch.cat([cate_proj_x, cont_proj_x], dim=2)
+        comb_proj_x = self.comb_proj_layer(comb_x)
+
+        comb_proj_x_t = comb_proj_x.transpose(0, 1) # (S, B, F)
+
+        batch_size = targets.size(0)
+        target_len = targets.size(1) # (B, S) 임으로
+
+        encoder_states, hidden = self.encoder(comb_proj_x_t)
+        outputs, _ = self.decoder(encoder_states, comb_proj_x_t, hidden)
+
+        outputs = outputs.transpose(0, 1)
+        # final forward
+        out = self.final_layer(outputs)
+        return out.squeeze(-1)
     
     
 class GRUBI(nn.Module):
@@ -140,18 +263,8 @@ class GRUBI(nn.Module):
         super().__init__()
         self.args = args
         
-        # cate_x embedding
-        self.cate_emb_layer = nn.Embedding(args.offset, args.cate_emb_dim, padding_idx=0)
-        self.cate_proj_layer = nn.Sequential(
-            nn.Linear(args.cate_emb_dim * args.cate_num, args.cate_proj_dim),
-            nn.LayerNorm(args.cate_proj_dim)
-        )
-
-        # cont_x embedding
-        self.cont_proj_layer = nn.Sequential(
-            nn.Linear(args.cont_num, args.cont_proj_dim),
-            nn.LayerNorm(args.cont_proj_dim)
-        )
+        self.cate_emb_proj_layer = CateEmbeddingProjector(args)
+        self.cont_emb_proj_layer = ContEmbeddingProjector(args)
 
         # cate_x + cont_x projection
         self.comb_proj_layer = nn.Sequential(
@@ -174,13 +287,8 @@ class GRUBI(nn.Module):
         )
         
     def forward(self, cate_x: torch.Tensor, cont_x: torch.Tensor, mask: torch.Tensor):
-        # cate forward
-        cate_emb_x = self.cate_emb_layer(cate_x)
-        cate_emb_x = cate_emb_x.view(cate_emb_x.size(0), self.args.max_seq_len, -1)
-        cate_proj_x = self.cate_proj_layer(cate_emb_x)
-
-        # cont forawrd
-        cont_proj_x = self.cont_proj_layer(cont_x)
+        cate_proj_x = self.cate_emb_proj_layer(cate_x)
+        cont_proj_x = self.cont_emb_proj_layer(cont_x)
 
         # comb forward
         comb_x = torch.cat([cate_proj_x, cont_proj_x], dim=2)
@@ -190,7 +298,7 @@ class GRUBI(nn.Module):
         hs, _ = self.gru_layer(comb_proj_x)
 
         # batch_first = True 이기 때문에.
-        hs = hs.contiguous().view(hs.size(0), -1, self.args.hidden_dim  * 2) # 뷰 안해줘도 되는데..?
+        hs = hs.contiguous().view(hs.size(0), -1, self.args.hidden_dim  * 2)
 
         # final forward
         out = self.final_layer(hs)
@@ -202,18 +310,8 @@ class GRUATT(nn.Module):
         super().__init__()
         self.args = args
         
-        # cate_x embedding
-        self.cate_emb_layer = nn.Embedding(args.offset, args.cate_emb_dim, padding_idx=0)
-        self.cate_proj_layer = nn.Sequential(
-            nn.Linear(args.cate_emb_dim * args.cate_num, args.cate_proj_dim),
-            nn.LayerNorm(args.cate_proj_dim)
-        )
-
-        # cont_x embedding
-        self.cont_proj_layer = nn.Sequential(
-            nn.Linear(args.cont_num, args.cont_proj_dim),
-            nn.LayerNorm(args.cont_proj_dim)
-        )
+        self.cate_emb_proj_layer = CateEmbeddingProjector(args)
+        self.cont_emb_proj_layer = ContEmbeddingProjector(args)
 
         # cate_x + cont_x projection
         self.comb_proj_layer = nn.Sequential(
@@ -248,13 +346,8 @@ class GRUATT(nn.Module):
         )
         
     def forward(self, cate_x: torch.Tensor, cont_x: torch.Tensor, mask: torch.Tensor):
-        # cate forward
-        cate_emb_x = self.cate_emb_layer(cate_x)
-        cate_emb_x = cate_emb_x.view(cate_emb_x.size(0), self.args.max_seq_len, -1)
-        cate_proj_x = self.cate_proj_layer(cate_emb_x)
-
-        # cont forawrd
-        cont_proj_x = self.cont_proj_layer(cont_x)
+        cate_proj_x = self.cate_emb_proj_layer(cate_x)
+        cont_proj_x = self.cont_emb_proj_layer(cont_x)
 
         # comb forward
         comb_x = torch.cat([cate_proj_x, cont_proj_x], dim=2)

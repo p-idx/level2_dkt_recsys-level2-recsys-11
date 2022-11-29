@@ -8,16 +8,18 @@ def parse_args():
 
     # parser.add_argument("--device", default="cpu", type=str, help="cpu or gpu")
 
+    parser.add_argument('--userid', default=0, type=int, help='userID 학습 유무, 학습 시 concat 진행한 train 으로 학습.')
+
     parser.add_argument(
         "--data_dir",
-        default="/opt/ml/data/",
+        default="/opt/ml/level2_dkt_recsys-level2-recsys-11/data/",
         type=str,
         help="data directory",
     )
 
     parser.add_argument(
         "--fe_num",
-        default='08',
+        default='00',
         type=str,
         help='feature engineering data file path (ex) 00'
     )
@@ -43,6 +45,7 @@ def parse_args():
     parser.add_argument("--max_seq_len", default=50, type=int, help="max sequence length" )
     parser.add_argument("--num_workers", default=8, type=int, help="number of workers")
     parser.add_argument('--leak', default=0, type=int)
+    parser.add_argument('--emb_separate', default=0, type=int, help='embedding 을 각 피처의 nunique 값으로 세분화함.')
     # 모델
     parser.add_argument('--cate_emb_dim', default=16, type=int) # 라벨인코딩하면 어차피 만개 넘어가서 32 ~ 64 등
     parser.add_argument('--cate_proj_dim', default=16, type=int) # 라벨인코딩하면 어차피 만개 넘어가서 32 ~ 64 등
@@ -56,8 +59,8 @@ def parse_args():
     parser.add_argument("--drop_out", default=0.4, type=float, help="drop out rate")
 
     # 훈련
-    parser.add_argument("--n_epochs", default=100, type=int, help="number of epochs")
-    parser.add_argument("--batch_size", default=512, type=int, help="batch size")
+    parser.add_argument("--n_epochs", default=200, type=int, help="number of epochs")
+    parser.add_argument("--batch_size", default=256, type=int, help="batch size")
     parser.add_argument("--lr", default=0.0001, type=float, help="learning rate")
     parser.add_argument("--clip_grad", default=0.75, type=float, help="clip grad")
     parser.add_argument("--patience", default=5, type=int, help="for early stopping")
@@ -68,7 +71,7 @@ def parse_args():
 
     ### 중요 ###
     # 일단 보류.
-    parser.add_argument("--model", default="GRUATT", type=str, help="model type")
+    parser.add_argument("--model", default="S2SGRU", type=str, help="model type")
     parser.add_argument("--optimizer", default="adam", type=str, help="optimizer type")
     parser.add_argument("--scheduler", default="plateau", type=str, help="scheduler type")
 
