@@ -110,6 +110,11 @@ def main(args):
                 )
 
         predicts = model.predict_proba(test_data)
+        print(predicts.shape)
+        output = []
+        for zero, one in predicts:
+            output.append(one)
+        predicts = output
 
         # SAVE
         output_dir = './output/'
