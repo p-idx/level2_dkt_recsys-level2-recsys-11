@@ -88,7 +88,7 @@ class FeatureEngineer:
 class FE00(FeatureEngineer):
     def __str__(self):
         return \
-            """유저의 시험 별로 한 칸씩 내려 이전 시험문제를 맞추었는지에 대한 feature 추가"""
+            """아무것도 처리하지 않은 상태"""
     def feature_engineering(self, train_df:pd.DataFrame, test_df:pd.DataFrame) -> pd.DataFrame:
         #################################
         # 완전 베이스 데이터로 시작합니다.
@@ -102,8 +102,8 @@ class FE00(FeatureEngineer):
 
         # TODO: merge 하면 그대로 eda 진행 후 test_df 따로 떼주세요. 하단은 merge 없는 예
         # fe_num = f'[{self.__class__.__name__}]' # <- 클래스 번호 출력용.
-        train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-        test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
+        # train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
+        # test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
     
 
         train_df['cont_ex'] = 0.0
@@ -115,7 +115,7 @@ class FE00(FeatureEngineer):
                 'assessmentItemID' : 'assessmentItemID_c', # 기본 1
                 'testId' : 'testId_c', # 기본 2
                 'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
-                'interaction' : 'interaction_c',
+                # 'interaction' : 'interaction_c',
             }
         )
         test_df = test_df.rename(columns=
@@ -123,7 +123,7 @@ class FE00(FeatureEngineer):
                 'assessmentItemID' : 'assessmentItemID_c', # 기본 1
                 'testId' : 'testId_c', # 기본 2
                 'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
-                'interaction' : 'interaction_c',
+                # 'interaction' : 'interaction_c',
             }
         )
         return train_df, test_df
@@ -1424,7 +1424,7 @@ def main():
     base_test_df = pd.read_csv(os.path.join(BASE_DATA_PATH, 'test_data.csv'), parse_dates=['Timestamp'])
 
     # # 클래스 생성 후 여기에 번호대로 추가해주세요.
-    # FE00(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    FE00(BASE_DATA_PATH, base_train_df, base_test_df).run()
     # FE01(BASE_DATA_PATH, base_train_df, base_test_df).run()
     # FE02(BASE_DATA_PATH, base_train_df, base_test_df).run()
     # FE03(BASE_DATA_PATH, base_train_df, base_test_df).run()
