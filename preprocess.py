@@ -6,6 +6,7 @@ from tqdm import tqdm
 import time
 import warnings
 warnings.filterwarnings("ignore")
+from typing import Tuple
 
 from sklearn.preprocessing import OrdinalEncoder, LabelEncoder, StandardScaler
 
@@ -60,6 +61,37 @@ class FeatureEngineer:
     #     train_df.iloc[-1, 2] = len(not_cate_cols) - 2 # userID, answerCode 제외
     #     return train_df, test_df # np.nan 용 행 제거
 
+    def __label_encoding(
+        self, 
+        train_df:pd.DataFrame, 
+        test_df:pd.DataFrame
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+
+        train_df.loc[len(train_df)] = np.nan
+        cate_cols = [col for col in train_df.columns if col[-2:] == '_c']
+
+        oe = OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=np.nan)
+        oe = oe.fit(train_df[cate_cols])
+
+        train_df[cate_cols] = oe.transform(train_df[cate_cols]) + 1 # np.nan 분리용
+        test_df[cate_cols] = oe.transform(test_df[cate_cols]) + 1   
+
+        train_df = train_df.fillna(0)
+        test_df = test_df.fillna(0)
+
+        offset = 0
+        for cate_col in cate_cols:
+            train_df[cate_col] += offset
+            test_df[cate_col] += offset
+            offset = train_df[cate_col].max()
+
+        offset = int(offset + 1)
+
+        train_df[cate_cols] = train_df[cate_cols].astype(np.int64)
+        test_df[cate_cols] = test_df[cate_cols].astype(np.int64)
+
+        return train_df, test_df, offset
+
 
     def run(self):
         print(f'[{self.__class__.__name__}] {self}')
@@ -74,9 +106,20 @@ class FeatureEngineer:
         fe_train_df = fe_train_df.drop(['Timestamp'], axis=1)
         fe_test_df = fe_test_df.drop(['Timestamp'], axis=1)
 
-        print(f'[{self.__class__.__name__}] save...')
+        print(f'[{self.__class__.__name__}] save csv...')
         fe_train_df.to_csv(os.path.join(BASE_DATA_PATH, self.__class__.__name__, 'train_data.csv'), index=False)
         fe_test_df.to_csv(os.path.join(BASE_DATA_PATH, self.__class__.__name__, 'test_data.csv'), index=False)
+
+        print(f'[{self.__class__.__name__}] label encoding...')
+        le_train_df, le_test_df, offset = self.__label_encoding(fe_train_df, fe_test_df)
+
+        print(f'[{self.__class__.__name__}] save le csv...')
+        le_train_df.to_csv(os.path.join(BASE_DATA_PATH, self.__class__.__name__, 'le_train_data.csv'), index=False)
+        le_test_df.to_csv(os.path.join(BASE_DATA_PATH, self.__class__.__name__, 'le_test_data.csv'), index=False)
+        
+        with open(os.path.join(BASE_DATA_PATH, self.__class__.__name__, 'offset.txt'), 'w') as f:
+            f.write(f'offset={offset}\n')
+
         print(f'[{self.__class__.__name__}] done.')
 
 
@@ -112,9 +155,9 @@ class FE00(FeatureEngineer):
         # 카테고리 컬럼 끝 _c 붙여주세요.
         train_df = train_df.rename(columns=
             {
-                'assessmentItemID' : 'assessmentItemID_c', # 기본 1
-                'testId' : 'testId_c', # 기본 2
-                'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
+                'assessmentItemID': 'assessmentItemID_c', # 기본 1
+                'testId': 'testId_c', # 기본 2
+                'KnowledgeTag': 'KnowledgeTag_c', # 기본 3
                 # 'interaction' : 'interaction_c',
             }
         )
