@@ -9,6 +9,8 @@ import wandb
 import pandas as pd
 import numpy as np
 
+import matplotlib.pyplot as plt
+
 
 import lightgbm as lgb
 
@@ -110,6 +112,18 @@ def main(args):
                 )
 
         predicts = model.predict_proba(test_data)
+        # print(model.n_features_)
+        print(model.get_feature_importance())
+        
+        feature_importance = model.feature_importances_
+        sorted_idx = np.argsort(feature_importance)
+        fig = plt.figure(figsize=(12, 6))
+        plt.barh(range(len(sorted_idx)), feature_importance[sorted_idx], align='center')
+        plt.yticks(range(len(sorted_idx)), np.array(test_data.columns)[sorted_idx])
+        plt.title('Feature Importance')
+        plt.show()
+        plt.savefig('Test.pdf')
+
 
         # SAVE
         output_dir = './output/'
