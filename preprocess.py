@@ -1177,7 +1177,7 @@ def main():
     # FE04(BASE_DATA_PATH, base_train_df, base_test_df).run()
     # FE05(BASE_DATA_PATH, base_train_df, base_test_df).run()
     # FE06(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE07(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    FE07(BASE_DATA_PATH, base_train_df, base_test_df).run()
     FE08(BASE_DATA_PATH, base_train_df, base_test_df).run()
 
 
