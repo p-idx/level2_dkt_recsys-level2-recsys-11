@@ -106,8 +106,8 @@ class FE00(FeatureEngineer):
         # test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
     
 
-        train_df['cont_ex'] = 0.0
-        test_df['cont_ex'] = 0.0
+        # train_df['cont_ex'] = 0.0
+        # test_df['cont_ex'] = 0.0
 
         # 카테고리 컬럼 끝 _c 붙여주세요.
         train_df = train_df.rename(columns=
