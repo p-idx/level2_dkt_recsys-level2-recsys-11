@@ -30,11 +30,11 @@ def main(args):
 
 
 
+    print('------------------------load data------------------------')
     cate_cols, train_data, test_data = get_data(args)
     
     
-    X_train, X_valid, y_train, y_valid = data_split(train_data)
-    
+    print(args.cat_cv)
     if args.cat_cv:
         cv_dataset = ctb.Pool(
                 data=train_data.drop('answerCode', axis=1),
@@ -93,12 +93,21 @@ def main(args):
         raise RuntimeError
     
     else:
+        X_train, X_valid, y_train, y_valid = data_split(train_data, args.ratio)
+
         model = get_model(args)
-        model.fit(X_train, y_train,
+        if args.model == 'CATB':
+            model.fit(X_train, y_train,
                 eval_set=(X_valid, y_valid),
-                cat_features=['userID']+cate_cols,
+                cat_features=['userID'] + cate_cols,
+                early_stopping_rounds= 10,
                 )
-        
+        elif args.model == 'LGB':
+            
+            model.fit(X_train, y_train,
+                eval_set=(X_valid, y_valid),
+                early_stopping_rounds= 10,
+                )
 
         predicts = model.predict_proba(test_data)
 

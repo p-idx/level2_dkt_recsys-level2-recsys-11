@@ -10,8 +10,15 @@ def get_model(args):
     if model_name == "XGB":
         model = xgb.XGBClassifier(**args, n_estimators=100, random_state=args.SEED)
 
-    if model_name == 'LGBM':
-        model = lgb.LGBMClassifier(**args.model_param, n_estimators=100, random_state=args.SEED)
+    if model_name == 'LGB':
+        param = {'objective': 'binary',
+                    'metric': 'auc',
+                    'boosting': 'dart',
+                    'learning_rate': 0.03,
+                    'max_depth': 64,
+                    'num_leaves': 63
+                    }
+        model = lgb.LGBMClassifier(**param, n_estimators=100) #need seed
 
     if model_name == 'CATB':
         model = ctb.CatBoostClassifier(
