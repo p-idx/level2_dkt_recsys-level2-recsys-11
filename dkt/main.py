@@ -96,7 +96,7 @@ def main(args):
             f"{args.model}_{args.time_info}_K{args.k_i}_{args.leak}_FE{args.fe_num}/"
         )
 
-        wandb_logger = WandbLogger( # 애가 wandb.init 비슷한거 다 해줌.
+        wandb_logger = WandbLogger(
             entity='mkdir',
             project='yang_s2s_test',
             name=f"{args.model}_{args.fe_num}_{args.time_info}_K{args.k_i}_{args.leak}_FE{args.fe_num}",
