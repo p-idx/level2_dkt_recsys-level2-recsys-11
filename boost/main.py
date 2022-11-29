@@ -10,6 +10,9 @@ import pandas as pd
 import numpy as np
 
 
+import lightgbm as lgb
+
+
 # import hydra
 # from omegaconf import DictConfig
 
@@ -17,18 +20,21 @@ import numpy as np
 
 
 def main(args):
+
+
     args.time_info = (datetime.datetime.today() + datetime.timedelta(hours=9)).strftime('%m%d_%H%M')
-    wandb.init(entity='mkdir', project='boost', name=f'{args.model}_{args.fe_num}_{args.time_info}')
     setSeeds(args.seed)
-    
-    wandb.config.update(args)
-    
+    if args.wandb:
+        wandb.init(entity='mkdir', project='kdg_cat_test', name=f'{args.model}_{args.fe_num}_{args.time_info}')
+        wandb.config.update(args)
+
+
+
     print('------------------------load data------------------------')
     cate_cols, train_data, test_data = get_data(args)
     
     
-    X_train, X_valid, y_train, y_valid = data_split(train_data)
-    
+    print(args.cat_cv)
     if args.cat_cv:
         cv_dataset = ctb.Pool(
                 data=train_data.drop('answerCode', axis=1),
@@ -87,12 +93,21 @@ def main(args):
         raise RuntimeError
     
     else:
+        X_train, X_valid, y_train, y_valid = data_split(train_data, args.ratio)
+
         model = get_model(args)
-        model.fit(X_train, y_train,
+        if args.model == 'CATB':
+            model.fit(X_train, y_train,
                 eval_set=(X_valid, y_valid),
-                cat_features=['userID']+cate_cols,
+                cat_features=['userID'] + cate_cols,
+                early_stopping_rounds= 10,
                 )
-        
+        elif args.model == 'LGB':
+            
+            model.fit(X_train, y_train,
+                eval_set=(X_valid, y_valid),
+                early_stopping_rounds= 10,
+                )
 
         predicts = model.predict_proba(test_data)
 
@@ -109,6 +124,7 @@ def main(args):
             for id, p in enumerate(predicts):
                 w.write('{},{}\n'.format(id,p))
 
+    if args.wandb:
         print('log to wandb')
         out = pd.read_csv('./catboost_info/test_error.tsv', delimiter ='\t')
         wandb.define_metric("epochs")

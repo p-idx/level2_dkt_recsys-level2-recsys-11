@@ -24,6 +24,10 @@ def parse_args():
     parser.add_argument("--od_wait", default=10, type=int, help="catboost's od_wait")
     
     parser.add_argument("--seed", default=42, type=int, help="seed")
+    parser.add_argument("--wandb", default=False, type=bool, help="use wandb")
+    parser.add_argument("--ratio", default=0.3, type=float, help="test ratio")
+
+
 
     parser.add_argument("--depth", default=6, type=int, help="depth of catboost")
     
