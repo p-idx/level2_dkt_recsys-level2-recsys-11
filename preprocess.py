@@ -1551,6 +1551,32 @@ class FE10(FeatureEngineer):
         merged['mark_randomly'] = merged['elapsed'].apply(lambda x: int((x>0) & (x<=5)))     # 걸린 시간이 1초에서 5초 사이는 평균 정답률이 너무 낮아서 찍은 걸로 간주
         test_df['mark_randomly'] = test_df['elapsed'].apply(lambda x: int((x>0) & (x<=5)))     # 걸린 시간이 1초에서 5초 사이는 평균 정답률이 너무 낮아서 찍은 걸로 간주
 
+
+        #### 4-2 : 문제 푸는데 걸린 시간의 이동평균
+        # - elapsed를 이용
+        # - 현재 값을 포함한 order 개수의 elapsed 평균값
+
+        def ma_time(df, order, decimals=3): 
+            # decimals: 소수점 몇자리까지 볼지
+            # order: 이동평균을 계산할 때 전 데이터 중 몇 개를 평균낼지
+
+            df[f'elapsed_ma_{order}'] = df.groupby(['userID'])['elapsed'].rolling(order).mean().values
+            df[f'elapsed_ma_{order}'] = df[f'elapsed_ma_{order}'].apply(lambda x: round(x, decimals))
+
+            # 결측치 처리 - 유저마다 결측치에서 가장 가까운 elapsed_ma 값으로 동일하게 바꿔줌
+            fill_nearest = lambda x: x.fillna(x.iloc[order-1, :])
+            df[f'elapsed_ma_{order}'] = df.loc[:, ['userID', f'elapsed_ma_{order}']].groupby('userID').apply(fill_nearest)[f'elapsed_ma_{order}']
+        
+            return df         
+        
+        # order를 4,5,6 까지 시도
+        for order in range(4,7):
+            merged = ma_time(merged, order)
+            test_df = ma_time(test_df, order)
+
+            numeric_col.append(f'elapsed_ma_{order}')
+
+
         # KnowledgeTag 빼기 
         merged = merged.drop('KnowledgeTag', axis=1)
         test_df = test_df.drop('KnowledgeTag', axis=1)
@@ -1574,7 +1600,6 @@ class FE10(FeatureEngineer):
                 'user_grade' : 'user_grade_c',
                 'ass_grade' : 'ass_grade_c',
                 'mark_randomly' : 'mark_randomly_c'
-                ''
             }
         )
         test_df = test_df.rename(columns=
@@ -1609,6 +1634,7 @@ def main():
     # FE07(BASE_DATA_PATH, base_train_df, base_test_df).run()
     # FE08(BASE_DATA_PATH, base_train_df, base_test_df).run()
     # FE09(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    FE10(BASE_DATA_PATH, base_train_df, base_test_df).run()
 
 
 if __name__=='__main__':
