@@ -76,16 +76,17 @@ class FeatureEngineer:
         train_df[cate_cols] = oe.transform(train_df[cate_cols]) + 1 # np.nan 분리용
         test_df[cate_cols] = oe.transform(test_df[cate_cols]) + 1   
 
+        train_df = train_df.fillna(0)
+        test_df = test_df.fillna(0)
+
+        train_df = train_df[:-1]
+        
         offset = 0
         for cate_col in cate_cols:
             train_df[cate_col] += offset
             test_df[cate_col] += offset
             offset = train_df[cate_col].max()
         
-        train_df = train_df.fillna(0)
-        test_df = test_df.fillna(0)
-
-        train_df = train_df[:-1]
 
         offset = int(offset + 1)
 
