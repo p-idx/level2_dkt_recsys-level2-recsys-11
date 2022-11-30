@@ -1524,6 +1524,125 @@ class FE11(FeatureEngineer):
         )
         return train_df, test_df
 
+class FE12(FeatureEngineer):
+    def __str__(self):
+        return \
+            """inter 1, 2, 3, 4 만 추가"""
+    def feature_engineering(self, train_df:pd.DataFrame, test_df:pd.DataFrame) -> pd.DataFrame:
+        #################################
+        # 완전 베이스 데이터로 시작합니다.
+        #
+        # Timestamp 컬럼은 이후 버려집니다. 버리실 필요 없습니다.
+        # userID, answerCode 는 수정할 수 없습니다. test 의 -1 로 되어있는 부분 그대로 가져갑니다. (컬럼 위치 변경은 가능합니다.)
+        # 새 카테고리 컬럼을 만들 때, 결측치가 생길 시 np.nan 으로 채워주세요. *'None', -1 등 불가
+        # 새 컨티뉴어스 컬럼을 만들 때, 결측치가 생길 시 imputation 해주세요. ex) mean... etc. *np.nan은 불가
+        # tip) imputation 이 어렵다면, 이전 대회의 age 범주화 같은 방법을 사용해 카테고리 컬럼으로 만들어 주세요.
+        #################################
+
+        # TODO: merge 하면 그대로 eda 진행 후 test_df 따로 떼주세요. 하단은 merge 없는 예
+        # fe_num = f'[{self.__class__.__name__}]' # <- 클래스 번호 출력용.
+        train_df['interaction1'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
+        test_df['interaction1'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
+    
+        train_df['interaction2'] = train_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
+        test_df['interaction2'] = test_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
+
+        train_df['interaction3'] = train_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
+        test_df['interaction3'] = test_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
+
+        train_df['interaction4'] = train_df.groupby(['userID','testId'])[['interaction3']].shift()['interaction3']
+        test_df['interaction4'] = test_df.groupby(['userID','testId'])[['interaction3']].shift()['interaction3']
+
+        # train_df['cont_ex'] = 0.0
+        # test_df['cont_ex'] = 0.0
+
+        # 카테고리 컬럼 끝 _c 붙여주세요.
+        train_df = train_df.rename(columns=
+            {
+                'assessmentItemID': 'assessmentItemID_c', # 기본 1
+                'testId': 'testId_c', # 기본 2
+                'KnowledgeTag': 'KnowledgeTag_c', # 기본 3
+                'interaction1' : 'interaction1_c',
+                'interaction2' : 'interaction2_c',
+                'interaction3' : 'interaction3_c',
+                'interaction4' : 'interaction4_c',
+            }
+        )
+        test_df = test_df.rename(columns=
+            {
+                'assessmentItemID' : 'assessmentItemID_c', # 기본 1
+                'testId' : 'testId_c', # 기본 2
+                'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
+                'interaction1' : 'interaction1_c',
+                'interaction2' : 'interaction2_c',
+                'interaction3' : 'interaction3_c',
+                'interaction4' : 'interaction4_c',
+            }
+        )
+        return train_df, test_df
+
+class FE13(FeatureEngineer):
+    def __str__(self):
+        return \
+            """inter 1, 2, 3, 4, 5 만 추가"""
+    def feature_engineering(self, train_df:pd.DataFrame, test_df:pd.DataFrame) -> pd.DataFrame:
+        #################################
+        # 완전 베이스 데이터로 시작합니다.
+        #
+        # Timestamp 컬럼은 이후 버려집니다. 버리실 필요 없습니다.
+        # userID, answerCode 는 수정할 수 없습니다. test 의 -1 로 되어있는 부분 그대로 가져갑니다. (컬럼 위치 변경은 가능합니다.)
+        # 새 카테고리 컬럼을 만들 때, 결측치가 생길 시 np.nan 으로 채워주세요. *'None', -1 등 불가
+        # 새 컨티뉴어스 컬럼을 만들 때, 결측치가 생길 시 imputation 해주세요. ex) mean... etc. *np.nan은 불가
+        # tip) imputation 이 어렵다면, 이전 대회의 age 범주화 같은 방법을 사용해 카테고리 컬럼으로 만들어 주세요.
+        #################################
+
+        # TODO: merge 하면 그대로 eda 진행 후 test_df 따로 떼주세요. 하단은 merge 없는 예
+        # fe_num = f'[{self.__class__.__name__}]' # <- 클래스 번호 출력용.
+        train_df['interaction1'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
+        test_df['interaction1'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
+    
+        train_df['interaction2'] = train_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
+        test_df['interaction2'] = test_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
+
+        train_df['interaction3'] = train_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
+        test_df['interaction3'] = test_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
+
+        train_df['interaction4'] = train_df.groupby(['userID','testId'])[['interaction3']].shift()['interaction3']
+        test_df['interaction4'] = test_df.groupby(['userID','testId'])[['interaction3']].shift()['interaction3']
+
+        
+        train_df['interaction5'] = train_df.groupby(['userID','testId'])[['interaction4']].shift()['interaction4']
+        test_df['interaction5'] = test_df.groupby(['userID','testId'])[['interaction4']].shift()['interaction4']
+
+        # train_df['cont_ex'] = 0.0
+        # test_df['cont_ex'] = 0.0
+
+        # 카테고리 컬럼 끝 _c 붙여주세요.
+        train_df = train_df.rename(columns=
+            {
+                'assessmentItemID': 'assessmentItemID_c', # 기본 1
+                'testId': 'testId_c', # 기본 2
+                'KnowledgeTag': 'KnowledgeTag_c', # 기본 3
+                'interaction1' : 'interaction1_c',
+                'interaction2' : 'interaction2_c',
+                'interaction3' : 'interaction3_c',
+                'interaction4' : 'interaction4_c',
+                'interaction5' : 'interaction5_c',
+            }
+        )
+        test_df = test_df.rename(columns=
+            {
+                'assessmentItemID' : 'assessmentItemID_c', # 기본 1
+                'testId' : 'testId_c', # 기본 2
+                'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
+                'interaction1' : 'interaction1_c',
+                'interaction2' : 'interaction2_c',
+                'interaction3' : 'interaction3_c',
+                'interaction4' : 'interaction4_c',
+                'interaction5' : 'interaction5_c',
+            }
+        )
+        return train_df, test_df
     
 def main():
     if not os.path.exists(BASE_DATA_PATH):
@@ -1544,7 +1663,8 @@ def main():
     # FE08(BASE_DATA_PATH, base_train_df, base_test_df).run()
     # FE09(BASE_DATA_PATH, base_train_df, base_test_df).run()
     # FE10(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    FE11(BASE_DATA_PATH, base_train_df, base_test_df).run()
-
+    # FE11(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    FE12(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    FE13(BASE_DATA_PATH, base_train_df, base_test_df).run()
 if __name__=='__main__':
     main()
