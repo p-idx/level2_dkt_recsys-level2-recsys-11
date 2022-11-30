@@ -23,9 +23,7 @@ import lightgbm as lgb
 def main(args):
     args.time_info = (datetime.datetime.today() + datetime.timedelta(hours=9)).strftime('%m%d_%H%M')
     setSeeds(args.seed)
-    if args.wandb:
-        wandb.init(entity='mkdir', project='kdg_cat_test', name=f'{args.model}_{args.fe_num}_{args.time_info}')
-        wandb.config.update(args)
+
 
     print('------------------------load data------------------------')
     cate_cols, train_data, test_data = get_data(args)
@@ -51,19 +49,37 @@ def main(args):
         #   "eval_set": eval_dataset
           }
         print('------------------------train model------------------------')
+        FOLD_NUM = 5
         _, model_list = ctb.cv(cv_dataset,
                params,
-               fold_count=5,
+               fold_count=FOLD_NUM,
                return_models=True
                )
+        print('log to wandb')
+        if args.wandb:
+            for k in range(FOLD_NUM):
+                if args.wandb:
+                    wandb.init(entity='mkdir', project='ksh_boost', name=f'{args.model}_{args.fe_num}_{args.time_info}_FOLD{k}')
+                    wandb.config.update(args)
+                out = pd.read_csv(f'./catboost_info/fold-{k}/test_error.tsv', delimiter ='\t')
+                wandb.define_metric("epochs")
+                wandb.define_metric("metric", step_metric="epochs")
+
+                for i in out.iter:
+                    epoch, metric, _ = out.loc[i]
+                    log_dict = {
+                    "epochs": epoch,
+                    "metric": metric,
+                    }
+                    wandb.log(log_dict)
         outputs = []
         print('------------------------predict------------------------')
         for model in model_list:
             pred = model.predict(test_data, prediction_type='Probability')
-            
             output = transform_proba(pred)
-                
             outputs.append(output)
+            
+            
             
         # Simple average ensemble
         predicts = np.mean(outputs, axis=0)
@@ -74,22 +90,12 @@ def main(args):
         print('------------------------save prediction------------------------')
         save_prediction(predicts, args)
 
-        if args.wandb:
-            print('log to wandb')
-            out = pd.read_csv('./catboost_info/test_error.tsv', delimiter ='\t')
-            wandb.define_metric("epochs")
-            wandb.define_metric("metric", step_metric="epochs")
 
-            for i in out.iter:
-                epoch, metric, _ = out.loc[i]
-                log_dict = {
-                "epochs": epoch,
-                "metric": metric,
-                }
-                wandb.log(log_dict)
 
     else:
-        
+        if args.wandb:
+            wandb.init(entity='mkdir', project='ksh_boost', name=f'{args.model}_{args.fe_num}_{args.time_info}')
+            wandb.config.update(args)
         
         # train_data = pd.read_csv('/opt/ml/data/FE08/exp_train_data.csv')
         # valid_data = pd.read_csv('/opt/ml/data/FE08/exp_valid_data.csv')
