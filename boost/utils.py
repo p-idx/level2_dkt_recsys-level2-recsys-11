@@ -12,3 +12,12 @@ def setSeeds(seed=42):
     random.seed(seed)
     np.random.seed(seed)
 
+def transform_proba(pred:list):
+    output = []
+    max_idx = np.argmax(pred, axis=1)
+    for i,v in enumerate(max_idx):
+        if v == 0:
+            output.append(1 - pred[i][v])
+        else:
+            output.append(pred[i][v])
+    return output

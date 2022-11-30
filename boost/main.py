@@ -1,7 +1,7 @@
 from args import parse_args
 from dataloader import get_data, data_split
 from models import get_model
-from utils import setSeeds
+from utils import setSeeds, transform_proba
 import catboost as ctb
 import os
 import datetime
@@ -20,8 +20,6 @@ import lightgbm as lgb
 
 
 def main(args):
-
-
     args.time_info = (datetime.datetime.today() + datetime.timedelta(hours=9)).strftime('%m%d_%H%M')
     setSeeds(args.seed)
     if args.wandb:
@@ -33,8 +31,6 @@ def main(args):
     print('------------------------load data------------------------')
     cate_cols, train_data, test_data = get_data(args)
     
-    
-    print(args.cat_cv)
     if args.cat_cv:
         cv_dataset = ctb.Pool(
                 data=train_data.drop('answerCode', axis=1),
@@ -42,14 +38,16 @@ def main(args):
                 cat_features=['userID']+cate_cols
                 )
         
-        params = {"iterations": args.n_epochs,
+        
+        params = {
+          "iterations": args.n_epochs,
           "depth": args.depth,
           "loss_function": "Logloss",
+        #   "custom_metric"='AUC',
           "verbose": args.verbose,
           "learning_rate": args.lr,
           "roc_file": "roc-file",
           "eval_metric": "AUC",
-          "roc_file": "roc-file",
         #   "eval_set": eval_dataset
           }
         print('------------------------train model------------------------')
@@ -63,20 +61,15 @@ def main(args):
         for model in model_list:
             pred = model.predict(test_data, prediction_type='Probability')
             
-            # argmax로 regress처럼 값 만들기
-            output = []
-            for i,v in enumerate(np.argmax(pred, axis=1)):
-                if v == 0:
-                    output.append(1 - pred[i][v])
-                else:
-                    output.append(pred[i][v])
+            output = transform_proba(pred)
                 
             outputs.append(output)
-        # print(outputs)
+            
+        # Simple average ensemble
         predicts = np.mean(outputs, axis=0)
             
 
-        # pred = np.mean( outputs , axis = 0 )
+
         
         print('------------------------save prediction------------------------')
         output_dir = './output/'
@@ -93,7 +86,18 @@ def main(args):
         raise RuntimeError
     
     else:
-        X_train, X_valid, y_train, y_valid = data_split(train_data, args.ratio)
+        
+        
+        train_data = pd.read_csv('/opt/ml/data/FE08/exp_train_data.csv')
+        valid_data = pd.read_csv('/opt/ml/data/FE08/exp_valid_data.csv')
+        
+        X_train = train_data.drop('answerCode', axis=1)
+        y_train = train_data['answerCode']
+        X_valid = valid_data.drop('answerCode', axis=1)
+        y_valid = valid_data['answerCode']
+        
+        print(X_train.shape, X_valid.shape)
+        # X_train, X_valid, y_train, y_valid = data_split(train_data, args.ratio)
 
         model = get_model(args)
         if args.model == 'CATB':
@@ -108,8 +112,9 @@ def main(args):
                 eval_set=(X_valid, y_valid),
                 early_stopping_rounds= 10,
                 )
-
         predicts = model.predict_proba(test_data)
+        
+        predicts = transform_proba(predicts)
 
         # SAVE
         output_dir = './output/'
@@ -122,7 +127,7 @@ def main(args):
             print("writing prediction : {}".format(write_path))
             w.write("id,prediction\n")
             for id, p in enumerate(predicts):
-                w.write('{},{}\n'.format(id,p))
+                w.write(f'{id},{p}\n')
 
     if args.wandb:
         print('log to wandb')
