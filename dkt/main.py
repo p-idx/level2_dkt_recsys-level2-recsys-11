@@ -4,7 +4,7 @@ import datetime
 from args import parse_args
 from src.dataloader import DKTDataset, load_data
 from src.utils import setSeeds
-from src.model import LSTM, GRU, GRUBI, GRUATT, BERT, S2SGRU
+from src.model import LSTM, GRU#, GRUBI, GRUATT, BERT, S2SGRU
 from src.lightning_model import DKTLightning
 
 import numpy as np
@@ -82,14 +82,14 @@ def main(args):
             torch_model = LSTM(args)
         elif args.model == 'GRU':
             torch_model = GRU(args)
-        elif args.model == 'GRUBI':
-            torch_model = GRUBI(args)
-        elif args.model == 'GRUATT':
-            torch_model = GRUATT(args)
-        elif args.model == 'BERT':
-            torch_model = BERT(args)
-        elif args.model == 'S2SGRU':
-            torch_model = S2SGRU(args)
+        # elif args.model == 'GRUBI':
+        #     torch_model = GRUBI(args)
+        # elif args.model == 'GRUATT':
+        #     torch_model = GRUATT(args)
+        # elif args.model == 'BERT':
+        #     torch_model = BERT(args)
+        # elif args.model == 'S2SGRU':
+        #     torch_model = S2SGRU(args)
 
         lightning_model = DKTLightning(args, torch_model.to('cuda'))
 
