@@ -1,1 +1,1 @@
-python main.py --batch_size 256 --cate_emb_dim 16 --cate_proj_dim 16 --clip_grad 0.75 --cont_proj_dim 2 --drop_out 0.4 --fe_num 08 --hidden_dim 58 --max_seq_len 50 --model GRU --leak 1 --patience 15 --n_epochs 185
+python main.py --batch_size 256 --cate_emb_dim 16 --cate_proj_dim 16 --clip_grad 0.75 --cont_proj_dim 2 --drop_out 0.4 --fe_num 00 --hidden_dim 58 --max_seq_len 50 --model GRU --leak 1 --patience 15 --n_epochs 185

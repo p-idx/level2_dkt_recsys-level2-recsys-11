@@ -20,7 +20,7 @@ import wandb
 
 
 def main(args):
-    # wandb.login()
+    wandb.login()
 
     setSeeds(args.seed)
 
@@ -52,6 +52,8 @@ def main(args):
     kf = StratifiedKFold(n_splits=5, shuffle=False)
     total_preds = np.zeros(len(test_data), dtype=np.float32)
     for i, (train_index, valid_index) in enumerate(kf.split(train_data, for_stratify)):
+        if i != 4:
+            continue
         # train_data_fold ready
         train_data_fold = train_data.iloc[train_index]
         valid_data_fold = train_data.iloc[valid_index]
@@ -98,7 +100,7 @@ def main(args):
 
         wandb_logger = WandbLogger(
             entity='mkdir',
-            project='yang_s2s_test',
+            project='yang',
             name=f"{args.model}_{args.fe_num}_{args.time_info}_K{args.k_i}_{args.leak}_FE{args.fe_num}",
         )
 
@@ -118,9 +120,9 @@ def main(args):
                 ),
                 ModelCheckpoint(
                     dirpath=write_path,
-                    monitor="valid_auc",
-                    filename=os.path.join(write_path, "valid_auc_max"),
-                    mode="max",
+                    monitor="valid_loss",
+                    filename=os.path.join(write_path, "valid_loss_min"),
+                    mode="min",
                     save_top_k=1,
                 ),
             ],
