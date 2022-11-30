@@ -12,12 +12,6 @@ from sklearn.preprocessing import OrdinalEncoder, LabelEncoder, StandardScaler
 
 BASE_DATA_PATH = '/opt/ml/level2_dkt_recsys-level2-recsys-11/data/'
 
-# def convert_time(s: str) -> int:
-#     timestamp = time.mktime(
-#         datetime.strptime(s, "%Y-%m-%d %H:%M:%S").timetuple()
-#     )
-#     return int(timestamp)
-
 
 class FeatureEngineer:
     def __init__(self, base_path, base_train_df, base_test_df, is_leakage=False):
