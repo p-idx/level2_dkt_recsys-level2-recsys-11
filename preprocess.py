@@ -79,6 +79,8 @@ class FeatureEngineer:
         train_df = train_df.fillna(0)
         test_df = test_df.fillna(0)
 
+        train_df = train_df[:-1]
+
         offset = 0
         for cate_col in cate_cols:
             train_df[cate_col] += offset
@@ -87,8 +89,10 @@ class FeatureEngineer:
 
         offset = int(offset + 1)
 
-        train_df[cate_cols] = train_df[cate_cols].astype(np.int64)
-        test_df[cate_cols] = test_df[cate_cols].astype(np.int64)
+        train_df[cate_cols + ['userID', 'answerCode']] = \
+            train_df[cate_cols + ['userID', 'answerCode']].astype(np.int64)
+        test_df[cate_cols + ['userID', 'answerCode']] = \
+            test_df[cate_cols + ['userID', 'answerCode']].astype(np.int64)
 
         return train_df, test_df, offset
 
