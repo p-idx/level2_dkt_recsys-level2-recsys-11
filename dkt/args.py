@@ -45,8 +45,9 @@ def parse_args():
     parser.add_argument("--max_seq_len", default=50, type=int, help="max sequence length" )
     parser.add_argument("--num_workers", default=8, type=int, help="number of workers")
     parser.add_argument('--leak', default=0, type=int)
-    parser.add_argument('--emb_separate', default=0, type=int, help='embedding 을 각 피처의 nunique 값으로 세분화함.')
+    # parser.add_argument('--emb_separate', default=0, type=int, help='embedding 을 각 피처의 nunique 값으로 세분화함.')
     # 모델
+    parser.add_argument('--loss', default='bce', type=str)
     parser.add_argument('--cate_emb_dim', default=16, type=int) # 라벨인코딩하면 어차피 만개 넘어가서 32 ~ 64 등
     parser.add_argument('--cate_proj_dim', default=16, type=int) # 라벨인코딩하면 어차피 만개 넘어가서 32 ~ 64 등
     parser.add_argument("--cont_proj_dim", default=2, type=int) # 수치형 피처 수보다 적어야 좋을듯. 아니야 riid 는 더 크게 해.
@@ -71,7 +72,7 @@ def parse_args():
 
     ### 중요 ###
     # 일단 보류.
-    parser.add_argument("--model", default="S2SGRU", type=str, help="model type")
+    parser.add_argument("--model", default="GRU", type=str, help="model type")
     parser.add_argument("--optimizer", default="adam", type=str, help="optimizer type")
     parser.add_argument("--scheduler", default="plateau", type=str, help="scheduler type")
 
