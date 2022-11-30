@@ -21,3 +21,16 @@ def transform_proba(pred:list):
         else:
             output.append(pred[i][v])
     return output
+
+def save_prediction(predicts, args):
+    output_dir = './output/'
+    write_path = os.path.join(output_dir, f"{args.model}_{args.fe_num}_{args.time_info}.csv")
+
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    with open(write_path, 'w', encoding='utf8') as w:
+        print(f"writing prediction : {write_path}")
+        w.write("id,prediction\n")
+        for id, p in enumerate(predicts):
+            w.write(f'{id},{p}\n')
