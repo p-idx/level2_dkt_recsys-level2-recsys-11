@@ -1,3 +1,7 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+
 asset/
 wandb/
 models/
@@ -16,3 +20,4 @@ weight/
 catboost_info/
 .empty/
 data/
+*.pdf
