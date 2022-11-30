@@ -6,6 +6,7 @@ from tqdm import tqdm
 import time
 import warnings
 warnings.filterwarnings("ignore")
+from typing import Tuple
 
 from sklearn.preprocessing import OrdinalEncoder, LabelEncoder, StandardScaler
 
@@ -60,6 +61,37 @@ class FeatureEngineer:
     #     train_df.iloc[-1, 2] = len(not_cate_cols) - 2 # userID, answerCode 제외
     #     return train_df, test_df # np.nan 용 행 제거
 
+    def __label_encoding(
+        self, 
+        train_df:pd.DataFrame, 
+        test_df:pd.DataFrame
+    ) -> Tuple[pd.DataFrame, pd.DataFrame]:
+
+        train_df.loc[len(train_df)] = np.nan
+        cate_cols = [col for col in train_df.columns if col[-2:] == '_c']
+
+        oe = OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=np.nan)
+        oe = oe.fit(train_df[cate_cols])
+
+        train_df[cate_cols] = oe.transform(train_df[cate_cols]) + 1 # np.nan 분리용
+        test_df[cate_cols] = oe.transform(test_df[cate_cols]) + 1   
+
+        train_df = train_df.fillna(0)
+        test_df = test_df.fillna(0)
+
+        offset = 0
+        for cate_col in cate_cols:
+            train_df[cate_col] += offset
+            test_df[cate_col] += offset
+            offset = train_df[cate_col].max()
+
+        offset = int(offset + 1)
+
+        train_df[cate_cols] = train_df[cate_cols].astype(np.int64)
+        test_df[cate_cols] = test_df[cate_cols].astype(np.int64)
+
+        return train_df, test_df, offset
+
 
     def run(self):
         print(f'[{self.__class__.__name__}] {self}')
@@ -74,9 +106,20 @@ class FeatureEngineer:
         fe_train_df = fe_train_df.drop(['Timestamp'], axis=1)
         fe_test_df = fe_test_df.drop(['Timestamp'], axis=1)
 
-        print(f'[{self.__class__.__name__}] save...')
+        print(f'[{self.__class__.__name__}] save csv...')
         fe_train_df.to_csv(os.path.join(BASE_DATA_PATH, self.__class__.__name__, 'train_data.csv'), index=False)
         fe_test_df.to_csv(os.path.join(BASE_DATA_PATH, self.__class__.__name__, 'test_data.csv'), index=False)
+
+        print(f'[{self.__class__.__name__}] label encoding...')
+        le_train_df, le_test_df, offset = self.__label_encoding(fe_train_df, fe_test_df)
+
+        print(f'[{self.__class__.__name__}] save le csv...')
+        le_train_df.to_csv(os.path.join(BASE_DATA_PATH, self.__class__.__name__, 'le_train_data.csv'), index=False)
+        le_test_df.to_csv(os.path.join(BASE_DATA_PATH, self.__class__.__name__, 'le_test_data.csv'), index=False)
+        
+        with open(os.path.join(BASE_DATA_PATH, self.__class__.__name__, 'offset.txt'), 'w') as f:
+            f.write(f'offset={offset}\n')
+
         print(f'[{self.__class__.__name__}] done.')
 
 
@@ -88,7 +131,7 @@ class FeatureEngineer:
 class FE00(FeatureEngineer):
     def __str__(self):
         return \
-            """유저의 시험 별로 한 칸씩 내려 이전 시험문제를 맞추었는지에 대한 feature 추가"""
+            """아무것도 처리하지 않은 상태"""
     def feature_engineering(self, train_df:pd.DataFrame, test_df:pd.DataFrame) -> pd.DataFrame:
         #################################
         # 완전 베이스 데이터로 시작합니다.
@@ -102,20 +145,20 @@ class FE00(FeatureEngineer):
 
         # TODO: merge 하면 그대로 eda 진행 후 test_df 따로 떼주세요. 하단은 merge 없는 예
         # fe_num = f'[{self.__class__.__name__}]' # <- 클래스 번호 출력용.
-        train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-        test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
+        # train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
+        # test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
     
 
-        train_df['cont_ex'] = 0.0
-        test_df['cont_ex'] = 0.0
+        # train_df['cont_ex'] = 0.0
+        # test_df['cont_ex'] = 0.0
 
         # 카테고리 컬럼 끝 _c 붙여주세요.
         train_df = train_df.rename(columns=
             {
-                'assessmentItemID' : 'assessmentItemID_c', # 기본 1
-                'testId' : 'testId_c', # 기본 2
-                'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
-                'interaction' : 'interaction_c',
+                'assessmentItemID': 'assessmentItemID_c', # 기본 1
+                'testId': 'testId_c', # 기본 2
+                'KnowledgeTag': 'KnowledgeTag_c', # 기본 3
+                # 'interaction' : 'interaction_c',
             }
         )
         test_df = test_df.rename(columns=
@@ -123,7 +166,7 @@ class FE00(FeatureEngineer):
                 'assessmentItemID' : 'assessmentItemID_c', # 기본 1
                 'testId' : 'testId_c', # 기본 2
                 'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
-                'interaction' : 'interaction_c',
+                # 'interaction' : 'interaction_c',
             }
         )
         return train_df, test_df
@@ -1424,7 +1467,7 @@ def main():
     base_test_df = pd.read_csv(os.path.join(BASE_DATA_PATH, 'test_data.csv'), parse_dates=['Timestamp'])
 
     # # 클래스 생성 후 여기에 번호대로 추가해주세요.
-    # FE00(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    FE00(BASE_DATA_PATH, base_train_df, base_test_df).run()
     # FE01(BASE_DATA_PATH, base_train_df, base_test_df).run()
     # FE02(BASE_DATA_PATH, base_train_df, base_test_df).run()
     # FE03(BASE_DATA_PATH, base_train_df, base_test_df).run()
