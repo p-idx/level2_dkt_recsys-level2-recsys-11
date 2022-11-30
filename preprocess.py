@@ -71,8 +71,8 @@ class FeatureEngineer:
         print(f'[{self.__class__.__name__}] feature engineering...')
         fe_train_df, fe_test_df = self.feature_engineering(self.base_train_df, self.base_test_df)
 
-        # fe_train_df = fe_train_df.drop(['Timestamp'], axis=1)
-        # fe_test_df = fe_test_df.drop(['Timestamp'], axis=1)
+        fe_train_df = fe_train_df.drop(['Timestamp'], axis=1)
+        fe_test_df = fe_test_df.drop(['Timestamp'], axis=1)
 
         print(f'[{self.__class__.__name__}] save...')
         fe_train_df.to_csv(os.path.join(BASE_DATA_PATH, self.__class__.__name__, 'train_data.csv'), index=False)
@@ -1432,8 +1432,8 @@ def main():
     # FE05(BASE_DATA_PATH, base_train_df, base_test_df).run()
     # FE06(BASE_DATA_PATH, base_train_df, base_test_df).run()
     # FE07(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE08(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    FE09(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    FE08(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    # FE09(BASE_DATA_PATH, base_train_df, base_test_df).run()
 
 
 if __name__=='__main__':

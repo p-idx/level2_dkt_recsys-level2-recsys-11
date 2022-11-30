@@ -34,8 +34,8 @@ def main(args):
 
     print('------------------------load data------------------------')
     cate_cols, train_data, test_data = get_data(args)
-    
-    
+
+
     print(args.cat_cv)
     if args.cat_cv:
         cv_dataset = ctb.Pool(
@@ -43,7 +43,7 @@ def main(args):
                 label=train_data['answerCode'],
                 cat_features=['userID']+cate_cols
                 )
-        
+
         params = {"iterations": args.n_epochs,
           "depth": args.depth,
           "loss_function": "Logloss",
@@ -64,7 +64,7 @@ def main(args):
         print('------------------------predict------------------------')
         for model in model_list:
             pred = model.predict(test_data, prediction_type='Probability')
-            
+
             # argmax로 regress처럼 값 만들기
             output = []
             for i,v in enumerate(np.argmax(pred, axis=1)):
@@ -72,14 +72,14 @@ def main(args):
                     output.append(1 - pred[i][v])
                 else:
                     output.append(pred[i][v])
-                
+
             outputs.append(output)
         # print(outputs)
         predicts = np.mean(outputs, axis=0)
-            
+
 
         # pred = np.mean( outputs , axis = 0 )
-        
+
         print('------------------------save prediction------------------------')
         output_dir = './output/'
         write_path = os.path.join(output_dir, f"{args.model}_{args.fe_num}_{args.time_info}.csv")
@@ -93,7 +93,7 @@ def main(args):
             for id, p in enumerate(predicts):
                 w.write('{},{}\n'.format(id,p))
         raise RuntimeError
-    
+
     else:
         X_train, X_valid, y_train, y_valid = data_split(train_data, args.ratio)
 
@@ -103,22 +103,24 @@ def main(args):
                 eval_set=(X_valid, y_valid),
                 cat_features=['userID'] + cate_cols,
                 early_stopping_rounds= 10,
+                use_best_model=True,
                 )
         elif args.model == 'LGB':
-            
+
             model.fit(X_train, y_train,
                 eval_set=(X_valid, y_valid),
                 early_stopping_rounds= 10,
                 )
 
         predicts = model.predict_proba(test_data)
-        # print(model.n_features_)
-        print(model.get_feature_importance())
-        
+
         feature_importance = model.feature_importances_
         sorted_idx = np.argsort(feature_importance)
-        fig = plt.figure(figsize=(12, 6))
-        plt.barh(range(len(sorted_idx)), feature_importance[sorted_idx], align='center')
+        print('피쳐 별 중요도')
+        for i, j in zip(np.array(test_data.columns)[sorted_idx], feature_importance[sorted_idx]):
+            print(f'{i:20}:{j}')
+        fig = plt.figure(figsize=(12, 10))
+        plt.barh(range(len(sorted_idx)), feature_importance[sorted_idx], align='center', color='green')
         plt.yticks(range(len(sorted_idx)), np.array(test_data.columns)[sorted_idx])
         plt.title('Feature Importance')
         plt.show()
