@@ -13,7 +13,11 @@ class DKTLightning(pl.LightningModule):
         self.args = args
         self.model = model
         # mse 로 갈아낄수도 있음.
-        self.loss_fn = nn.BCEWithLogitsLoss(reduction='none')
+        if args.loss == 'bce':
+            self.loss_fn = nn.BCEWithLogitsLoss(reduction='none')
+        elif args.loss == 'mse':
+            self.loss_fn = nn.MSELoss(reduction='none')
+            
         self.train_auc = AUROC(pos_label=1) # 얘네가 좋은 점은 사이킷런 꺼 보다 똘똘함.
         self.valid_auc = AUROC(pos_label=1)
         self.train_acc = Accuracy(threshold=0.5) # 아까 train valid 구분 안해서 이상했ㅇ므
