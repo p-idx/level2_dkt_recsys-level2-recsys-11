@@ -113,6 +113,11 @@ def main(args):
                 )
 
         predicts = model.predict_proba(test_data)
+        print(predicts.shape)
+        output = []
+        for zero, one in predicts:
+            output.append(one)
+        predicts = output
 
         feature_importance = model.feature_importances_
         sorted_idx = np.argsort(feature_importance)
