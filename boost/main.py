@@ -36,7 +36,7 @@ def main(args):
     cate_cols, train_data, test_data = get_data(args)
 
 
-    print(args.cat_cv)
+    print('check by cv in catboost:',args.cat_cv)
     if args.cat_cv:
         cv_dataset = ctb.Pool(
                 data=train_data.drop('answerCode', axis=1),
@@ -124,7 +124,7 @@ def main(args):
         print('피쳐 별 중요도')
         for i, j in zip(np.array(test_data.columns)[sorted_idx], feature_importance[sorted_idx]):
             print(f'{i:20}:{j}')
-        fig = plt.figure(figsize=(12, 10))
+        fig = plt.figure(figsize=(12, 8))
         plt.barh(range(len(sorted_idx)), feature_importance[sorted_idx], align='center', color='green')
         plt.yticks(range(len(sorted_idx)), np.array(test_data.columns)[sorted_idx])
         plt.title('Feature Importance')

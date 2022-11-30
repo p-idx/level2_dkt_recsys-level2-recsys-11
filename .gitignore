@@ -20,3 +20,4 @@ weight/
 catboost_info/
 .empty/
 data/
+*.pdf
