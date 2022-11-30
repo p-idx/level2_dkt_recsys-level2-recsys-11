@@ -10,18 +10,17 @@ import numpy as np
 
 # 데이터 로드 함수(train, test) from directory
 def get_data(args):
-    train_data = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'train_data.csv'))
-    test_data = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'test_data.csv'))
+    train_data = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'train_data.csv'))    # train + test(not -1)
+    test_data = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'test_data.csv'))    # test
+    
+    cate_cols = [col for col in train_data.columns if col[-2:]== '_c']
 
-    # merge/분리
-    df = train_data.merge(test_data, how='outer')
-
-    cate_cols = [col for col in df.columns if col[-2:]== '_c']
-
-    test = df[df.answerCode == -1]
-    train = df[df.answerCode != -1]
+    test = test_data[test_data.answerCode == -1]   # test last sequnece
+    
     #테스트의 정답 컬럼을 제거
     test = test.drop('answerCode', axis=1)
+    train = train_data
+    # print('cate_cols:', cate_cols)
     return cate_cols, train, test
 
 
