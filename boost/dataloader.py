@@ -10,8 +10,8 @@ import numpy as np
 
 # 데이터 로드 함수(train, test) from directory
 def get_data(args):
-    train_data = pd.read_csv('../data/FE09/train_data.csv') # train + test(not -1)
-    test_data = pd.read_csv('../data/FE09/test_data.csv') # test
+    train_data = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'train_data.csv'))    # train + test(not -1)
+    test_data = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'test_data.csv'))    # test
     
     cate_cols = [col for col in train_data.columns if col[-2:]== '_c']
 
