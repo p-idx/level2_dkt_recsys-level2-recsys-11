@@ -73,17 +73,7 @@ def main(args):
         
         print('------------------------save prediction------------------------')
         save_prediction(predicts, args)
-        # output_dir = './output/'
-        # write_path = os.path.join(output_dir, f"{args.model}_{args.fe_num}_{args.time_info}.csv")
 
-        # if not os.path.exists(output_dir):
-        #     os.makedirs(output_dir)
-
-        # with open(write_path, 'w', encoding='utf8') as w:
-        #     print("writing prediction : {}".format(write_path))
-        #     w.write("id,prediction\n")
-        #     for id, p in enumerate(predicts):
-        #         w.write('{},{}\n'.format(id,p))
         if args.wandb:
             print('log to wandb')
             out = pd.read_csv('./catboost_info/test_error.tsv', delimiter ='\t')
@@ -148,17 +138,6 @@ def main(args):
 
         # SAVE
         save_prediction(predicts, args)
-        # output_dir = './output/'
-        # write_path = os.path.join(output_dir, f"{args.model}_{args.fe_num}_{args.time_info}.csv")
-
-        # if not os.path.exists(output_dir):
-        #     os.makedirs(output_dir)
-
-        # with open(write_path, 'w', encoding='utf8') as w:
-        #     print("writing prediction : {}".format(write_path))
-        #     w.write("id,prediction\n")
-        #     for id, p in enumerate(predicts):
-        #         w.write(f'{id},{p}\n')
 
     if args.wandb:
         print('log to wandb')
