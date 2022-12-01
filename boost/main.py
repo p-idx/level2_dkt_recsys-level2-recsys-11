@@ -1,5 +1,5 @@
 from args import parse_args
-from dataloader import get_data, data_split
+from dataloader import get_data, data_split, time_loader, time_shuffle
 from models import get_model
 from utils import setSeeds
 import catboost as ctb
@@ -33,7 +33,10 @@ def main(args):
 
 
     print('------------------------load data------------------------')
-    cate_cols, train_data, test_data = get_data(args)
+    # cate_cols, train_data, test_data = get_data(args)
+
+    ##### HAS_TIME
+    cate_cols, train_data, test_data, valid_data = time_loader(args)
 
 
     print('check by cv in catboost:',args.cat_cv)
@@ -95,7 +98,9 @@ def main(args):
         raise RuntimeError
 
     else:
-        X_train, X_valid, y_train, y_valid = data_split(train_data, args.ratio)
+        # X_train, X_valid, y_train, y_valid = data_split(train_data, args.ratio)
+        ################# HAS_TIME
+        X_train, X_valid, y_train, y_valid = time_shuffle(train_data, valid_data)
 
         model = get_model(args)
         if args.model == 'CATB':
