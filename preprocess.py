@@ -593,8 +593,8 @@ class FE06(FeatureEngineer):
         # test_df = pd.read_csv('../data/test_data.csv')
         train_df['Timestamp'] = pd.to_datetime(train_df['Timestamp'], format="%Y-%m-%d %H:%M:%S")
         test_df['Timestamp'] = pd.to_datetime(test_df['Timestamp'], format="%Y-%m-%d %H:%M:%S")
-        train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode'].fillna(-1)
-        test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode'].fillna(-1)
+        train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode'].fillna(-1).astype(np.int16)
+        test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode'].fillna(-1).astype(np.int16)
 
         diff = train_df.loc[:, ['userID','testId','Timestamp']].groupby(['userID','testId']).diff().fillna(pd.Timedelta(seconds=0))
         diff = diff['Timestamp'].apply(lambda x: x.total_seconds())
@@ -772,8 +772,8 @@ class FE07(FeatureEngineer):
         # test_df = pd.read_csv('../data/test_data.csv')
         train_df['Timestamp'] = pd.to_datetime(train_df['Timestamp'], format="%Y-%m-%d %H:%M:%S")
         test_df['Timestamp'] = pd.to_datetime(test_df['Timestamp'], format="%Y-%m-%d %H:%M:%S")
-        train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode'].fillna(-1)
-        test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode'].fillna(-1)
+        train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode'].fillna(-1).astype(np.int16)
+        test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode'].fillna(-1).astype(np.int16)
 
         diff = train_df.loc[:, ['userID','testId','Timestamp']].groupby(['userID','testId']).diff().fillna(pd.Timedelta(seconds=0))
         diff = diff['Timestamp'].apply(lambda x: x.total_seconds())
@@ -1006,8 +1006,8 @@ class FE08(FeatureEngineer):
         # test_df = pd.read_csv('../data/test_data.csv')
         train_df['Timestamp'] = pd.to_datetime(train_df['Timestamp'], format="%Y-%m-%d %H:%M:%S")
         test_df['Timestamp'] = pd.to_datetime(test_df['Timestamp'], format="%Y-%m-%d %H:%M:%S")
-        train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode'].fillna(-1)
-        test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode'].fillna(-1)
+        train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode'].fillna(-1).astype(np.int16)
+        test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode'].fillna(-1).astype(np.int16)
 
         diff = train_df.loc[:, ['userID','testId','Timestamp']].groupby(['userID','testId']).diff().fillna(pd.Timedelta(seconds=0))
         diff = diff['Timestamp'].apply(lambda x: x.total_seconds())
@@ -1468,15 +1468,15 @@ def main():
 
     # # 클래스 생성 후 여기에 번호대로 추가해주세요.
     FE00(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE01(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE02(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE03(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE04(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE05(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE06(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE07(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    FE01(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    FE02(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    FE03(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    FE04(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    FE05(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    FE06(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    FE07(BASE_DATA_PATH, base_train_df, base_test_df).run()
     FE08(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE09(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    FE09(BASE_DATA_PATH, base_train_df, base_test_df).run()
 
 
 if __name__=='__main__':
