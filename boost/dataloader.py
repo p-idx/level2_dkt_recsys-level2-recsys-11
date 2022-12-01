@@ -30,6 +30,7 @@ def data_split(train_data, args):
         test_data = test_data.query('answerCode != -1')
         
         valid = test_data.groupby('userID').tail(args.valid_exp_n)
+        print(f'valid.shape = {valid.shape}, valid.n_users = {valid.userID.nunique()}')
         train = train_data.drop(index = valid.index)
         
         X_train = train.drop('answerCode', axis=1)

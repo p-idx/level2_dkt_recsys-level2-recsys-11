@@ -100,7 +100,7 @@ def main(args):
         plt.yticks(range(len(sorted_idx)), np.array(test_data.columns)[sorted_idx])
         plt.title('Feature Importance')
         plt.show()
-        plt.savefig('Test.pdf')
+        plt.savefig(f'{args.time_info}feature_importance.png')
 
         # SAVE
         save_prediction(predicts, args)
