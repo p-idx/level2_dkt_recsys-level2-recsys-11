@@ -1,7 +1,7 @@
 from args import parse_args
 from dataloader import get_data, data_split
 from models import get_model
-from utils import setSeeds, transform_proba, save_prediction
+from utils import setSeeds, transform_proba, save_prediction, log_wandb
 import catboost as ctb
 import os
 import datetime
@@ -24,10 +24,8 @@ def main(args):
     args.time_info = (datetime.datetime.today() + datetime.timedelta(hours=9)).strftime('%m%d_%H%M')
     setSeeds(args.seed)
 
-
     print('------------------------load data------------------------')
     cate_cols, train_data, test_data = get_data(args)
-
 
     print('check by cv in catboost:',args.cat_cv)
     if args.cat_cv:
@@ -36,11 +34,11 @@ def main(args):
                 label=train_data['answerCode'],
                 cat_features=['userID']+cate_cols
                 )
-        
+        args.LOSS_FUNCTION = 'Logloss'
         params = {
           "iterations": args.n_epochs,
           "depth": args.depth,
-          "loss_function": "Logloss",
+          "loss_function": args.LOSS_FUNCTION,
         #   "custom_metric"='AUC',
           "verbose": args.verbose,
           "learning_rate": args.lr,
@@ -49,54 +47,32 @@ def main(args):
         #   "eval_set": eval_dataset
           }
         print('------------------------train model------------------------')
-        FOLD_NUM = 5
+        args.FOLD_NUM = 2
         _, model_list = ctb.cv(cv_dataset,
                params,
-               fold_count=FOLD_NUM,
+               fold_count=args.FOLD_NUM,
                return_models=True
                )
         print('log to wandb')
-        if args.wandb:
-            for k in range(FOLD_NUM):
-                if args.wandb:
-                    wandb.init(entity='mkdir', project='ksh_boost', name=f'{args.model}_{args.fe_num}_{args.time_info}_FOLD{k}')
-                    wandb.config.update(args)
-                out = pd.read_csv(f'./catboost_info/fold-{k}/test_error.tsv', delimiter ='\t')
-                wandb.define_metric("epochs")
-                wandb.define_metric("metric", step_metric="epochs")
+        log_wandb(args)
 
-                for i in out.iter:
-                    epoch, metric, _ = out.loc[i]
-                    log_dict = {
-                    "epochs": epoch,
-                    "metric": metric,
-                    }
-                    wandb.log(log_dict)
         outputs = []
         print('------------------------predict------------------------')
-        for model in model_list:
+        for fold, model in enumerate(model_list):
             pred = model.predict(test_data, prediction_type='Probability')
             output = transform_proba(pred)
+            save_prediction(output, args, k=fold)
             outputs.append(output)
-            
-            
             
         # Simple average ensemble
         predicts = np.mean(outputs, axis=0)
-
-
-
         
         print('------------------------save prediction------------------------')
         save_prediction(predicts, args)
 
-
-
     else:
-        if args.wandb:
-            wandb.init(entity='mkdir', project='ksh_boost', name=f'{args.model}_{args.fe_num}_{args.time_info}')
-            wandb.config.update(args)
-        
+
+        # test -1 마지막 정답여부 기록 + 
         # train_data = pd.read_csv('/opt/ml/data/FE08/exp_train_data.csv')
         # valid_data = pd.read_csv('/opt/ml/data/FE08/exp_valid_data.csv')
         
@@ -107,7 +83,7 @@ def main(args):
         
         # print(X_train.shape, X_valid.shape)
         X_train, X_valid, y_train, y_valid = data_split(train_data, args.ratio)
-
+        args.LOSS_FUNCTION = 'Logloss'
         model = get_model(args)
         if args.model == 'CATB':
             model.fit(X_train, y_train,
@@ -141,23 +117,10 @@ def main(args):
         plt.show()
         plt.savefig('Test.pdf')
 
-
         # SAVE
         save_prediction(predicts, args)
-
-    if args.wandb:
-        print('log to wandb')
-        out = pd.read_csv('./catboost_info/test_error.tsv', delimiter ='\t')
-        wandb.define_metric("epochs")
-        wandb.define_metric("metric", step_metric="epochs")
-
-        for i in out.iter:
-            epoch, metric, _ = out.loc[i]
-            log_dict = {
-            "epochs": epoch,
-            "metric": metric,
-            }
-            wandb.log(log_dict)
+        
+        log_wandb(args)
 
 
 if __name__ == '__main__':
