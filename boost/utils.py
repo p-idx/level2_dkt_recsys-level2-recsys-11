@@ -41,8 +41,6 @@ def log_wandb(args):
     print('log to wandb')
     def read_error_file(valid_error, train_error):
         for i in valid_error.valid_iter:
-            # TODO metric을 가변적으로 쓸 때도 wandb로 기록할 수 있게
-            
             valid_metric = valid_error.loc[i].to_dict()
             valid_metric.update(train_error.loc[i].to_dict())
             del valid_metric['valid_iter']
