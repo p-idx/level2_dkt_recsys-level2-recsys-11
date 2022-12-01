@@ -53,7 +53,7 @@ def log_wandb(args):
         if args.cat_cv:
             for k in range(args.FOLD_NUM):
                 # args.k = k
-                wandb.init(entity='mkdir', project='ksh_boost', name=f'{args.model}_{args.fe_num}_{args.time_info}_FOLD{k}')
+                wandb.init(entity='mkdir', project='sj_cat_test', name=f'{args.model}_{args.fe_num}_{args.time_info}_FOLD{k}')
                 wandb.config.update(args)
                 wandb.define_metric("iter")
                 wandb.define_metric(f"{args.LOSS_FUNCTION}", step_metric="iter")
@@ -65,7 +65,7 @@ def log_wandb(args):
                 
                 wandb.finish()
         else:
-            wandb.init(entity='mkdir', project='ksh_boost', name=f'{args.model}_{args.fe_num}_{args.time_info}')
+            wandb.init(entity='mkdir', project='sj_cat_test', name=f'{args.model}_{args.fe_num}_{args.time_info}')
             wandb.config.update(args)
             wandb.define_metric("iter")
             wandb.define_metric(f"{args.LOSS_FUNCTION}", step_metric="iter")
