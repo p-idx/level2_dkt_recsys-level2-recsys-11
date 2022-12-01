@@ -21,3 +21,4 @@ catboost_info/
 .empty/
 data/
 *.pdf
+*.png
