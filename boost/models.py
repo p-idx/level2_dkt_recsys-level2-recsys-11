@@ -12,13 +12,14 @@ def get_model(args):
 
     if model_name == 'LGB':
         param = {'objective': 'binary',
-                    'metric': 'auc',
-                    'boosting': 'dart',
-                    'learning_rate': 0.03,
+                    'metric': ['auc', 'binary_logloss'],
+                    'boosting_type': 'gbdt', # gbdt, dart, rf, goss
+                    'learning_rate': args.lr,
                     'max_depth': 64,
-                    'num_leaves': 63
+                    'num_leaves': 63,
+                    'n_estimators': args.n_epochs,
                     }
-        model = lgb.LGBMClassifier(**param, n_estimators=100) #need seed
+        model = lgb.LGBMClassifier(**param) #need seed
 
     if model_name == 'CATB':
         model = ctb.CatBoostClassifier(

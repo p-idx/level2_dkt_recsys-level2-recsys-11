@@ -51,7 +51,7 @@ def log_wandb(args):
             f"train {args.LOSS_FUNCTION}": train_loss
             }
             wandb.log(log_dict)
-            
+
     if args.wandb:
         if args.cat_cv:
             for k in range(args.FOLD_NUM):

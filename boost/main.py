@@ -96,6 +96,7 @@ def main(args):
             model.fit(X_train, y_train,
                 eval_set=(X_valid, y_valid),
                 early_stopping_rounds= 50,
+                verbose= 50,
                 )
         
         predicts = model.predict_proba(test_data)
