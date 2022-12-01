@@ -89,13 +89,13 @@ def main(args):
             model.fit(X_train, y_train,
                 eval_set=(X_valid, y_valid),
                 cat_features=['userID'] + cate_cols,
-                early_stopping_rounds= 10,
+                # early_stopping_rounds= 50,
                 use_best_model=True,
                 )
         elif args.model == 'LGB':
             model.fit(X_train, y_train,
                 eval_set=(X_valid, y_valid),
-                early_stopping_rounds= 10,
+                early_stopping_rounds= 50,
                 )
         
         predicts = model.predict_proba(test_data)

@@ -22,7 +22,7 @@ def get_model(args):
 
     if model_name == 'CATB':
         model = ctb.CatBoostClassifier(
-                                    eval_metric='AUC',
+                                    custom_metric=['AUC','Accuracy'],
                                     iterations=args.n_epochs,
                                     depth=args.depth,
                                     learning_rate=args.lr,
@@ -31,6 +31,7 @@ def get_model(args):
                                     od_type='IncToDec',
                                     od_pval=args.od_pval,
                                     od_wait=args.od_wait,
+                                    task_type='GPU'
                                     )
         
     return model

@@ -21,7 +21,7 @@ def parse_args():
     parser.add_argument("--lr", default=0.1, type=float, help="learning rate")
     parser.add_argument("--verbose", default=50, type=int, help="number of verbose")
     parser.add_argument("--od_pval", default=0.05, type=int, help="catboost's od_pval")
-    parser.add_argument("--od_wait", default=10, type=int, help="catboost's od_wait")
+    parser.add_argument("--od_wait", default=50, type=int, help="catboost's od_wait")
 
     parser.add_argument("--seed", default=42, type=int, help="seed")
     parser.add_argument("--wandb", default=True, type=bool, help="use wandb")
