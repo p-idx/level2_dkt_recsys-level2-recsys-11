@@ -42,9 +42,11 @@ def log_wandb(args):
     def read_error_file(valid_error, train_error):
         for i in valid_error.valid_iter:
             # TODO metric을 가변적으로 쓸 때도 wandb로 기록할 수 있게
-            # epoch, metric, loss = out.loc[i].to_dict
+            
             valid_metric = valid_error.loc[i].to_dict()
             valid_metric.update(train_error.loc[i].to_dict())
+            del valid_metric['valid_iter']
+            del valid_metric['train_iter']
             wandb.log(valid_metric)
             
     if args.wandb:
@@ -83,5 +85,6 @@ def log_wandb(args):
             for col in train_column:
                 train.append('train_'+col)
             train_error.columns = train
+            
             
             read_error_file(valid_error, train_error)
