@@ -24,9 +24,11 @@ def get_data(args):
 
 
 # 데이터 스플릿 함수
-def data_split(train_data, test_data, args):
-    # TODO 바꾼 preprocess로 나온 데이터는 오류 나옴
+def data_split(train_data, args):
     if args.valid_exp:
+        test_data = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'test_data.csv'))    # test
+        test_data = test_data.query('answerCode != -1')
+        
         valid = test_data.groupby('userID').tail(args.valid_exp_n)
         train = train_data.drop(index = valid.index)
         

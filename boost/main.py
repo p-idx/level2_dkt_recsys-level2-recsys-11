@@ -53,7 +53,7 @@ def main(args):
                fold_count=args.FOLD_NUM,
                return_models=True
                )
-        print('log to wandb')
+        
         log_wandb(args)
 
         outputs = []
@@ -71,15 +71,14 @@ def main(args):
         save_prediction(predicts, args)
 
     else:
-        X_train, X_valid, y_train, y_valid = data_split(train_data, test_data, args)
-        
+        X_train, X_valid, y_train, y_valid = data_split(train_data, args)
         
         model = get_model(args)
         if args.model == 'CATB':
             model.fit(X_train, y_train,
                 eval_set=(X_valid, y_valid),
                 cat_features=['userID'] + cate_cols,
-                # early_stopping_rounds= 50,
+                early_stopping_rounds= 50,
                 use_best_model=True,
                 )
         elif args.model == 'LGB':
@@ -90,11 +89,6 @@ def main(args):
         
         predicts = model.predict_proba(test_data)
         predicts = transform_proba(predicts)
-        # print(predicts.shape)
-        # output = []
-        # for zero, one in predicts:
-        #     output.append(one)
-        # predicts = output
 
         feature_importance = model.feature_importances_
         sorted_idx = np.argsort(feature_importance)

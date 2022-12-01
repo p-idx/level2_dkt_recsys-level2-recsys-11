@@ -38,19 +38,14 @@ def save_prediction(predicts: list, args: dict, k=0):
             w.write(f'{id},{p}\n')
 
 def log_wandb(args):
-    def read_error_file(out, out_train):
-        for i in out.iter:
+    print('log to wandb')
+    def read_error_file(valid_error, train_error):
+        for i in valid_error.valid_iter:
             # TODO metric을 가변적으로 쓸 때도 wandb로 기록할 수 있게
             # epoch, metric, loss = out.loc[i].to_dict
-            wandb.log(out.loc[i].to_dict())
-            # _, train_loss = out_train.loc[i]
-            # log_dict = {
-            # "epochs": epoch,
-            # f"valid AUC": metric,
-            # f"valid {args.LOSS_FUNCTION}": loss,
-            # f"train {args.LOSS_FUNCTION}": train_loss
-            # }
-            # wandb.log(log_dict)
+            valid_metric = valid_error.loc[i].to_dict()
+            valid_metric.update(train_error.loc[i].to_dict())
+            wandb.log(valid_metric)
             
     if args.wandb:
         if args.cat_cv:
@@ -61,10 +56,10 @@ def log_wandb(args):
                 wandb.define_metric("iter")
                 wandb.define_metric(f"{args.LOSS_FUNCTION}", step_metric="iter")
                 
-                out = pd.read_csv(f'./catboost_info/fold-{k}/test_error.tsv', delimiter ='\t')
-                out_train = pd.read_csv(f'./catboost_info/fold-{k}/learn_error.tsv', delimiter ='\t')
+                valid_error = pd.read_csv(f'./catboost_info/fold-{k}/test_error.tsv', delimiter ='\t')
+                train_error = pd.read_csv(f'./catboost_info/fold-{k}/learn_error.tsv', delimiter ='\t')
                 
-                read_error_file(out, out_train)
+                read_error_file(valid_error, train_error)
                 
                 wandb.finish()
         else:
@@ -73,8 +68,20 @@ def log_wandb(args):
             wandb.define_metric("iter")
             wandb.define_metric(f"{args.LOSS_FUNCTION}", step_metric="iter")
             
-            print('log to wandb')
-            out = pd.read_csv('./catboost_info/test_error.tsv', delimiter ='\t')
-            out_train = pd.read_csv('./catboost_info/learn_error.tsv', delimiter ='\t')
             
-            read_error_file(out, out_train)
+            valid_error = pd.read_csv('./catboost_info/test_error.tsv', delimiter ='\t')
+            train_error = pd.read_csv('./catboost_info/learn_error.tsv', delimiter ='\t')
+            
+            valid_column = valid_error.columns
+            valid = []
+            for col in valid_column:
+                valid.append('valid_'+col)
+            valid_error.columns = valid
+            
+            train_column = train_error.columns
+            train = []
+            for col in train_column:
+                train.append('train_'+col)
+            train_error.columns = train
+            
+            read_error_file(valid_error, train_error)
