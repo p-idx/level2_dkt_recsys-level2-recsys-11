@@ -71,7 +71,7 @@ def main(args):
         save_prediction(predicts, args)
 
     else:
-        X_train, X_valid, y_train, y_valid = data_split(train_data, args)
+        X_train, X_valid, y_train, y_valid = data_split(train_data, test_data, args)
         
         
         model = get_model(args)
@@ -89,11 +89,12 @@ def main(args):
                 )
         
         predicts = model.predict_proba(test_data)
-        print(predicts.shape)
-        output = []
-        for zero, one in predicts:
-            output.append(one)
-        predicts = output
+        predicts = transform_proba(predicts)
+        # print(predicts.shape)
+        # output = []
+        # for zero, one in predicts:
+        #     output.append(one)
+        # predicts = output
 
         feature_importance = model.feature_importances_
         sorted_idx = np.argsort(feature_importance)

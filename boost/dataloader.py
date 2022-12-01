@@ -20,14 +20,14 @@ def get_data(args):
     #테스트의 정답 컬럼을 제거
     test = test.drop('answerCode', axis=1)
     train = train_data
-    # print('cate_cols:', cate_cols)
     return cate_cols, train, test
 
 
 # 데이터 스플릿 함수
-def data_split(train_data, args):
+def data_split(train_data, test_data, args):
+    # TODO 바꾼 preprocess로 나온 데이터는 오류 나옴
     if args.valid_exp:
-        valid = train_data.groupby('userID').tail(args.valid_exp_n)
+        valid = test_data.groupby('userID').tail(args.valid_exp_n)
         train = train_data.drop(index = valid.index)
         
         X_train = train.drop('answerCode', axis=1)
@@ -35,7 +35,7 @@ def data_split(train_data, args):
         
         y_train = train['answerCode']
         y_valid = valid['answerCode']
-        
+
         
     else:
         X = train_data.drop(['answerCode'], axis=1)
