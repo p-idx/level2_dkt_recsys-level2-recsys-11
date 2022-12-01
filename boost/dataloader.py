@@ -25,14 +25,27 @@ def get_data(args):
 
 
 # 데이터 스플릿 함수
-def data_split(train_data, ratio):
-    X = train_data.drop(['answerCode'], axis=1)
-    y = train_data['answerCode']
+def data_split(train_data, args):
+    if args.valid_exp:
+        valid = train_data.groupby('userID').tail(args.valid_exp_n)
+        train = train_data.drop(index = valid.index)
+        
+        X_train = train.drop('answerCode', axis=1)
+        X_valid = valid.drop('answerCode', axis=1)
+        
+        y_train = train['answerCode']
+        y_valid = valid['answerCode']
+        
+        
+    else:
+        X = train_data.drop(['answerCode'], axis=1)
+        y = train_data['answerCode']
 
-    X_train, X_valid, y_train, y_valid = train_test_split(
-        X,
-        y,
-        test_size=ratio, # 일단 이 정도로 학습해서 추이 확인
-        shuffle=True,
-    )
+        X_train, X_valid, y_train, y_valid = train_test_split(
+            X,
+            y,
+            test_size=args.ratio, # 일단 이 정도로 학습해서 추이 확인
+            shuffle=True,
+        )
+    
     return X_train, X_valid, y_train, y_valid

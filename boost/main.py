@@ -71,19 +71,9 @@ def main(args):
         save_prediction(predicts, args)
 
     else:
-
-        # test -1 마지막 정답여부 기록 + 
-        # train_data = pd.read_csv('/opt/ml/data/FE08/exp_train_data.csv')
-        # valid_data = pd.read_csv('/opt/ml/data/FE08/exp_valid_data.csv')
+        X_train, X_valid, y_train, y_valid = data_split(train_data, args)
         
-        # X_train = train_data.drop('answerCode', axis=1)
-        # y_train = train_data['answerCode']
-        # X_valid = valid_data.drop('answerCode', axis=1)
-        # y_valid = valid_data['answerCode']
         
-        # print(X_train.shape, X_valid.shape)
-        X_train, X_valid, y_train, y_valid = data_split(train_data, args.ratio)
-        args.LOSS_FUNCTION = 'Logloss'
         model = get_model(args)
         if args.model == 'CATB':
             model.fit(X_train, y_train,
