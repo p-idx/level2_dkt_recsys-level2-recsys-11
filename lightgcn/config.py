@@ -7,7 +7,7 @@ class CFG:
     wandb_kwargs = dict(project="dkt-gcn")
 
     # data
-    basepath = "/opt/ml/input/data/"
+    basepath = "/opt/ml/level2_dkt_recsys-level2-recsys-11/data/"
     loader_verbose = True
 
     # dump
@@ -16,7 +16,7 @@ class CFG:
 
     # build
     embedding_dim = 64  # int
-    num_layers = 1  # int
+    num_layers = 1  # int (보통 5까지 늘리지만 4-10도 학습 가능) - 실험 요소
     alpha = None  # Optional[Union[float, Tensor]]
     build_kwargs = {}  # other arguments
     weight = "./weight/best_model.pt"
