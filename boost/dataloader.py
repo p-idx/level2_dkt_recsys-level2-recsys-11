@@ -13,6 +13,15 @@ import random
 def get_data(args):
     train_data = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'train_data.csv'))    # train + test(not -1)
     test_data = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'test_data.csv'))    # test
+
+    elim_col = ['user_correct_answer', 
+                'user_total_answer',
+                'interaction_c',
+                'user_acc_c'
+                ]
+    for col in elim_col:
+        train_data = train_data.drop(col, axis=1)
+        test_data = test_data.drop(col, axis=1)
     
     cate_cols = [col for col in train_data.columns if col[-2:]== '_c']
 
@@ -27,7 +36,18 @@ def get_data(args):
 # 데이터 스플릿 함수
 def data_split(train_data, args):
     if args.valid_exp:
-        test_data = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'test_data.csv'))    # test
+        test_data = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'test_data.csv'))    # 
+        
+        # drop unused coloumns
+        elim_col = ['user_correct_answer', 
+                    'user_total_answer',
+                    'interaction_c',
+                    'user_acc_c'
+                    ]
+        for col in elim_col:
+            test_data = test_data.drop(col, axis=1)
+
+
         test_data = test_data.query('answerCode != -1')
         
         valid = test_data.groupby('userID').tail(args.valid_exp_n)
@@ -64,13 +84,13 @@ def time_shuffle(train):
     group = (train.groupby("userID").apply(lambda r: [r[name] for name in train.columns]))
 
     col = train.columns.tolist()
-    for idx, col in enumerate(col):
-        if col == 'answerCode':
+    for idx, c in enumerate(col):
+        if c == 'answerCode':
             ac_idx = idx
             break
     
-    print(f"Column '{col[idx]}' taken out for has_time")
-    col.pop(idx)
+    print(f"Column '{col[ac_idx]}' taken out for y (has_time)")
+    col.pop(ac_idx)
 
     X = [[] for _ in range(len(col))]
     Y = []
@@ -81,7 +101,7 @@ def time_shuffle(train):
 
     # realign shuffled train data to pd.DataFrame 
     for user in by_user:
-        Y.extend(user.pop(3))
+        Y.extend(user.pop(ac_idx))
 
         for idx,feat in enumerate(user):
             X[idx].extend(feat)  

@@ -1,5 +1,5 @@
 from args import parse_args
-from dataloader import get_data, data_split, time_loader, time_shuffle
+from dataloader import get_data, data_split
 from models import get_model
 from utils import setSeeds, transform_proba, save_prediction, log_wandb
 import catboost as ctb
@@ -25,10 +25,7 @@ def main(args):
     setSeeds(args.seed)
 
     print('------------------------load data------------------------')
-    # cate_cols, train_data, test_data = get_data(args)
-
-    ##### HAS_TIME
-    cate_cols, train_data, test_data, valid_data = time_loader(args)
+    cate_cols, train_data, test_data = get_data(args)
 
     print('check by cv in catboost:',args.cat_cv)
     if args.cat_cv:
@@ -74,10 +71,9 @@ def main(args):
         save_prediction(predicts, args)
 
     else:
-        # X_train, X_valid, y_train, y_valid = data_split(train_data, args.ratio)
-        ################# HAS_TIME
-        X_train, X_valid, y_train, y_valid = time_shuffle(train_data, valid_data)
-
+        print(f'golden feature on: {train_data.columns[3]}')
+        X_train, X_valid, y_train, y_valid = data_split(train_data, args)
+        
         model = get_model(args)
         if args.model == 'CATB':
             model.fit(X_train, y_train,
