@@ -7,7 +7,11 @@ import torch
 def prepare_dataset(device, basepath, verbose=True, logger=None):
     data = load_data(basepath)
     train_data, test_data = separate_data(data)
+
+    # 전체 유저와 문제 인덱싱
     id2index = indexing_data(data)
+
+    # edge와 label 정의
     train_data_proc = process_data(train_data, id2index, device)
     test_data_proc = process_data(test_data, id2index, device)
 
@@ -28,6 +32,7 @@ def load_data(basepath):
     data.drop_duplicates(
         subset=["userID", "assessmentItemID"], keep="last", inplace=True
     )
+    # drop_duplicates 끝난 후에 FE 해야함!!
 
     return data
 
