@@ -33,11 +33,15 @@ def data_split(train_data, args):
         valid = test_data.groupby('userID').tail(args.valid_exp_n)
         print(f'valid.shape = {valid.shape}, valid.n_users = {valid.userID.nunique()}')
         train = train_data.drop(index = valid.index)
-        
-        X_train = train.drop('answerCode', axis=1)
+
+        ### has_time shuffle
+        if args.has_time:
+            X_train, y_train = time_shuffle(train)
+        else:
+            X_train = train.drop('answerCode', axis=1)
+            y_train = train['answerCode']
+
         X_valid = valid.drop('answerCode', axis=1)
-        
-        y_train = train['answerCode']
         y_valid = valid['answerCode']
 
         
@@ -55,23 +59,18 @@ def data_split(train_data, args):
     return X_train, X_valid, y_train, y_valid
 
 
-def time_loader(args):
-    train = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'train_data.csv'))
-    test = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'test_data.csv'))
-    valid = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'valid_data.csv'))
 
-    cate_cols = [col for col in train.columns if col[-2:]== '_c']
-
-    test = test[test.answerCode == -1]
-    test = test.drop('answerCode', axis=1)
-    
-    return cate_cols, train, test, valid
-
-def time_shuffle(train, valid):
+def time_shuffle(train):
     group = (train.groupby("userID").apply(lambda r: [r[name] for name in train.columns]))
 
     col = train.columns.tolist()
-    col.pop(3)
+    for idx, col in enumerate(col):
+        if col == 'answerCode':
+            ac_idx = idx
+            break
+    
+    print(f"Column '{col[idx]}' taken out for has_time")
+    col.pop(idx)
 
     X = [[] for _ in range(len(col))]
     Y = []
@@ -87,10 +86,7 @@ def time_shuffle(train, valid):
         for idx,feat in enumerate(user):
             X[idx].extend(feat)  
 
-    train_X = pd.DataFrame({name:values for name,values in zip(col, X)})
-    train_Y = pd.DataFrame({'answerCode': Y})
+    X_train = pd.DataFrame({name:values for name,values in zip(col, X)})
+    y_train = pd.DataFrame({'answerCode': Y})
 
-    valid_X = valid.drop('answerCode', axis=1)
-    valid_Y = valid['answerCode']
-
-    return train_X, valid_X, train_Y, valid_Y
+    return X_train, y_train

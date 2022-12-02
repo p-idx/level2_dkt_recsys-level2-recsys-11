@@ -25,14 +25,14 @@ def get_model(args):
                                     custom_metric=['AUC','Accuracy'],
                                     iterations=args.n_epochs,
                                     # depth=args.depth,
-                                    # learning_rate=args.lr,
+                                    learning_rate=args.lr,
                                     # verbose=args.verbose,
                                     loss_function=args.LOSS_FUNCTION, #사용자 지정 로스도 가능한 모양
                                     # od_type='IncToDec',
                                     # od_pval=args.od_pval,
                                     # od_wait=args.od_wait,
                                     # task_type='GPU'
-                                    # has_time=True
+                                    has_time=True
                                     )
         
     return model
