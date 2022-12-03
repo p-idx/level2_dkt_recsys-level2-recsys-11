@@ -35,3 +35,12 @@ pip install torch-geometric==2.0.4
 - config.py 수정 : 데이터 파일/출력 파일 경로 설정 등
 - train.py 실행 : 데이터 학습 수행 및 모델 저장
 - inference.py 실행 : 저장된 모델 로드 및 테스트 데이터 추론 수행
+
+
+# 12.03 변경 사항
+
+- config.py 가서 사용할 FE폴더의 숫자를 수정해서 사용 
+    - 데이터는 반드시 userID, assessmentItemID를 포함하고 있어야 함!
+    - datasets.indexing_data, preprocess_data 에서 int로 label encoding된 값들은 str으로 변환해주어야 함
+- validation(n=7440)이 datasets.data_separate() 에서 생성되게 수정
+    - 베이스라인에서는 merged_train에서 랜덤하게 1000개 사용
