@@ -71,8 +71,11 @@ def main(args):
         save_prediction(predicts, args)
 
     else:
-        print(f'golden feature on: {train_data.columns[3]}')
+        
         X_train, X_valid, y_train, y_valid = data_split(train_data, args)
+        print(f'golden feature on: {X_train.columns[2]}')
+
+        
         
         model = get_model(args)
         if args.model == 'CATB':

@@ -23,7 +23,7 @@ def get_data(args):
         train_data = train_data.drop(col, axis=1)
         test_data = test_data.drop(col, axis=1)
     
-    cate_cols = [col for col in train_data.columns if col[-2:]== '_c']
+    cate_cols = ['userID'] + [col for col in train_data.columns if col[-2:]== '_c']
 
     test = test_data[test_data.answerCode == -1]   # test last sequnece
     

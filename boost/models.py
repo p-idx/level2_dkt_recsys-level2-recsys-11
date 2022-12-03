@@ -32,8 +32,8 @@ def get_model(args):
                                     # od_pval=args.od_pval,
                                     # od_wait=args.od_wait,
                                     # task_type='GPU'
-                                    per_float_feature_quantization='3:border_count=16',
-                                    has_time=True
+                                    # per_float_feature_quantization=['2:border_count=16'],
+                                    # has_time=True
                                     )
         
     return model
