@@ -1215,13 +1215,7 @@ class FE09(FeatureEngineer):
         # interaction3
         train_df['interaction_3'] = train_df.groupby(['userID','testId'])[['answerCode']].shift(3)['answerCode'].fillna(-1).astype(np.int16)
         test_df['interaction_3'] = test_df.groupby(['userID','testId'])[['answerCode']].shift(3)['answerCode'].fillna(-1).astype(np.int16)
-        # interaction4
-        train_df['interaction_4'] = train_df.groupby(['userID','testId'])[['answerCode']].shift(4)['answerCode'].fillna(-1).astype(np.int16)
-        test_df['interaction_4'] = test_df.groupby(['userID','testId'])[['answerCode']].shift(4)['answerCode'].fillna(-1).astype(np.int16)
-        # interaction5
-        train_df['interaction_5'] = train_df.groupby(['userID','testId'])[['answerCode']].shift(5)['answerCode'].fillna(-1).astype(np.int16)
-        test_df['interaction_5'] = test_df.groupby(['userID','testId'])[['answerCode']].shift(5)['answerCode'].fillna(-1).astype(np.int16)
-
+      
 
         diff = train_df.loc[:, ['userID','testId','Timestamp']].groupby(['userID','testId']).diff().fillna(pd.Timedelta(seconds=0))
         diff = diff['Timestamp'].apply(lambda x: x.total_seconds())
@@ -1425,11 +1419,10 @@ class FE09(FeatureEngineer):
         )
         return train_df, test_df
 
-
 class FE10(FeatureEngineer):
     def __str__(self):
         return \
-            """inter 1, 2, 3 만 추가"""
+            """FE09 - less important features + Moving Avg"""
     def feature_engineering(self, train_df:pd.DataFrame, test_df:pd.DataFrame) -> pd.DataFrame:
         #################################
         # 완전 베이스 데이터로 시작합니다.
@@ -1441,1012 +1434,198 @@ class FE10(FeatureEngineer):
         # tip) imputation 이 어렵다면, 이전 대회의 age 범주화 같은 방법을 사용해 카테고리 컬럼으로 만들어 주세요.
         #################################
 
-        # TODO: merge 하면 그대로 eda 진행 후 test_df 따로 떼주세요. 하단은 merge 없는 예
-        # fe_num = f'[{self.__class__.__name__}]' # <- 클래스 번호 출력용.
-        train_df['interaction1'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-        test_df['interaction1'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-    
-        train_df['interaction2'] = train_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
-        test_df['interaction2'] = test_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
-
-        train_df['interaction3'] = train_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
-        test_df['interaction3'] = test_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
-
-        # train_df['cont_ex'] = 0.0
-        # test_df['cont_ex'] = 0.0
-
-        # 카테고리 컬럼 끝 _c 붙여주세요.
-        train_df = train_df.rename(columns=
-            {
-                'assessmentItemID': 'assessmentItemID_c', # 기본 1
-                'testId': 'testId_c', # 기본 2
-                'KnowledgeTag': 'KnowledgeTag_c', # 기본 3
-                'interaction1' : 'interaction1_c',
-                'interaction2' : 'interaction2_c',
-                'interaction3' : 'interaction3_c',
-            }
-        )
-        test_df = test_df.rename(columns=
-            {
-                'assessmentItemID' : 'assessmentItemID_c', # 기본 1
-                'testId' : 'testId_c', # 기본 2
-                'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
-                'interaction1' : 'interaction1_c',
-                'interaction2' : 'interaction2_c',
-                'interaction3' : 'interaction3_c',
-            }
-        )
-        return train_df, test_df
-
-
-class FE11(FeatureEngineer):
-    def __str__(self):
-        return \
-            """inter 1, 2 만 추가"""
-    def feature_engineering(self, train_df:pd.DataFrame, test_df:pd.DataFrame) -> pd.DataFrame:
-        #################################
-        # 완전 베이스 데이터로 시작합니다.
-        #
-        # Timestamp 컬럼은 이후 버려집니다. 버리실 필요 없습니다.
-        # userID, answerCode 는 수정할 수 없습니다. test 의 -1 로 되어있는 부분 그대로 가져갑니다. (컬럼 위치 변경은 가능합니다.)
-        # 새 카테고리 컬럼을 만들 때, 결측치가 생길 시 np.nan 으로 채워주세요. *'None', -1 등 불가
-        # 새 컨티뉴어스 컬럼을 만들 때, 결측치가 생길 시 imputation 해주세요. ex) mean... etc. *np.nan은 불가
-        # tip) imputation 이 어렵다면, 이전 대회의 age 범주화 같은 방법을 사용해 카테고리 컬럼으로 만들어 주세요.
-        #################################
-
-        # TODO: merge 하면 그대로 eda 진행 후 test_df 따로 떼주세요. 하단은 merge 없는 예
-        # fe_num = f'[{self.__class__.__name__}]' # <- 클래스 번호 출력용.
-        train_df['interaction1'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-        test_df['interaction1'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-    
-        train_df['interaction2'] = train_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
-        test_df['interaction2'] = test_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
-
-        # train_df['cont_ex'] = 0.0
-        # test_df['cont_ex'] = 0.0
-
-        # 카테고리 컬럼 끝 _c 붙여주세요.
-        train_df = train_df.rename(columns=
-            {
-                'assessmentItemID': 'assessmentItemID_c', # 기본 1
-                'testId': 'testId_c', # 기본 2
-                'KnowledgeTag': 'KnowledgeTag_c', # 기본 3
-                'interaction1' : 'interaction1_c',
-                'interaction2' : 'interaction2_c',
-            }
-        )
-        test_df = test_df.rename(columns=
-            {
-                'assessmentItemID' : 'assessmentItemID_c', # 기본 1
-                'testId' : 'testId_c', # 기본 2
-                'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
-                'interaction1' : 'interaction1_c',
-                'interaction2' : 'interaction2_c',
-            }
-        )
-        return train_df, test_df
-
-class FE12(FeatureEngineer):
-    def __str__(self):
-        return \
-            """inter 1, 2, 3, 4 만 추가"""
-    def feature_engineering(self, train_df:pd.DataFrame, test_df:pd.DataFrame) -> pd.DataFrame:
-        #################################
-        # 완전 베이스 데이터로 시작합니다.
-        #
-        # Timestamp 컬럼은 이후 버려집니다. 버리실 필요 없습니다.
-        # userID, answerCode 는 수정할 수 없습니다. test 의 -1 로 되어있는 부분 그대로 가져갑니다. (컬럼 위치 변경은 가능합니다.)
-        # 새 카테고리 컬럼을 만들 때, 결측치가 생길 시 np.nan 으로 채워주세요. *'None', -1 등 불가
-        # 새 컨티뉴어스 컬럼을 만들 때, 결측치가 생길 시 imputation 해주세요. ex) mean... etc. *np.nan은 불가
-        # tip) imputation 이 어렵다면, 이전 대회의 age 범주화 같은 방법을 사용해 카테고리 컬럼으로 만들어 주세요.
-        #################################
-
-        # TODO: merge 하면 그대로 eda 진행 후 test_df 따로 떼주세요. 하단은 merge 없는 예
-        # fe_num = f'[{self.__class__.__name__}]' # <- 클래스 번호 출력용.
-        train_df['interaction1'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-        test_df['interaction1'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-    
-        train_df['interaction2'] = train_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
-        test_df['interaction2'] = test_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
-
-        train_df['interaction3'] = train_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
-        test_df['interaction3'] = test_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
-
-        train_df['interaction4'] = train_df.groupby(['userID','testId'])[['interaction3']].shift()['interaction3']
-        test_df['interaction4'] = test_df.groupby(['userID','testId'])[['interaction3']].shift()['interaction3']
-
-        # train_df['cont_ex'] = 0.0
-        # test_df['cont_ex'] = 0.0
-
-        # 카테고리 컬럼 끝 _c 붙여주세요.
-        train_df = train_df.rename(columns=
-            {
-                'assessmentItemID': 'assessmentItemID_c', # 기본 1
-                'testId': 'testId_c', # 기본 2
-                'KnowledgeTag': 'KnowledgeTag_c', # 기본 3
-                'interaction1' : 'interaction1_c',
-                'interaction2' : 'interaction2_c',
-                'interaction3' : 'interaction3_c',
-                'interaction4' : 'interaction4_c',
-            }
-        )
-        test_df = test_df.rename(columns=
-            {
-                'assessmentItemID' : 'assessmentItemID_c', # 기본 1
-                'testId' : 'testId_c', # 기본 2
-                'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
-                'interaction1' : 'interaction1_c',
-                'interaction2' : 'interaction2_c',
-                'interaction3' : 'interaction3_c',
-                'interaction4' : 'interaction4_c',
-            }
-        )
-        return train_df, test_df
-
-class FE15(FeatureEngineer):
-    def __str__(self):
-        return \
-            """inter 1, 2, 3, 4 만 추가"""
-    def feature_engineering(self, train_df:pd.DataFrame, test_df:pd.DataFrame) -> pd.DataFrame:
-        #################################
-        # 완전 베이스 데이터로 시작합니다.
-        #
-        # Timestamp 컬럼은 이후 버려집니다. 버리실 필요 없습니다.
-        # userID, answerCode 는 수정할 수 없습니다. test 의 -1 로 되어있는 부분 그대로 가져갑니다. (컬럼 위치 변경은 가능합니다.)
-        # 새 카테고리 컬럼을 만들 때, 결측치가 생길 시 np.nan 으로 채워주세요. *'None', -1 등 불가
-        # 새 컨티뉴어스 컬럼을 만들 때, 결측치가 생길 시 imputation 해주세요. ex) mean... etc. *np.nan은 불가
-        # tip) imputation 이 어렵다면, 이전 대회의 age 범주화 같은 방법을 사용해 카테고리 컬럼으로 만들어 주세요.
-        #################################
-
-        # TODO: merge 하면 그대로 eda 진행 후 test_df 따로 떼주세요. 하단은 merge 없는 예
-        # fe_num = f'[{self.__class__.__name__}]' # <- 클래스 번호 출력용.
-        train_df['interaction1'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-        test_df['interaction1'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-    
-        train_df['interaction2'] = train_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
-        test_df['interaction2'] = test_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
-
-        train_df['interaction3'] = train_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
-        test_df['interaction3'] = test_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
-
-        train_df['interaction4'] = train_df.groupby(['userID','testId'])[['interaction3']].shift()['interaction3']
-        test_df['interaction4'] = test_df.groupby(['userID','testId'])[['interaction3']].shift()['interaction3']
-
-
-        # train_df['cont_ex'] = 0.0
-        # test_df['cont_ex'] = 0.0
-
-        # 카테고리 컬럼 끝 _c 붙여주세요.
-        train_df = train_df.rename(columns=
-            {
-                'assessmentItemID': 'assessmentItemID_c', # 기본 1
-                'testId': 'testId_c', # 기본 2
-                'KnowledgeTag': 'KnowledgeTag_c', # 기본 3
-                'interaction1' : 'interaction1_c',
-                'interaction2' : 'interaction2_c',
-                'interaction3' : 'interaction3_c',
-                'interaction4' : 'interaction4_c',
-            }
-        )
-        test_df = test_df.rename(columns=
-            {
-                'assessmentItemID' : 'assessmentItemID_c', # 기본 1
-                'testId' : 'testId_c', # 기본 2
-                'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
-                'interaction1' : 'interaction1_c',
-                'interaction2' : 'interaction2_c',
-                'interaction3' : 'interaction3_c',
-                'interaction4' : 'interaction4_c',
-            }
-        )
-        return train_df, test_df
-
-
-class FE16(FeatureEngineer):
-    def __str__(self):
-        return \
-            """inter 1, 2, 3, 4 추가
-            testId 대분류 추가(난이도 판별됨)
-            """
-    def feature_engineering(self, train_df:pd.DataFrame, test_df:pd.DataFrame) -> pd.DataFrame:
-        #################################
-        # 완전 베이스 데이터로 시작합니다.
-        #
-        # Timestamp 컬럼은 이후 버려집니다. 버리실 필요 없습니다.
-        # userID, answerCode 는 수정할 수 없습니다. test 의 -1 로 되어있는 부분 그대로 가져갑니다. (컬럼 위치 변경은 가능합니다.)
-        # 새 카테고리 컬럼을 만들 때, 결측치가 생길 시 np.nan 으로 채워주세요. *'None', -1 등 불가
-        # 새 컨티뉴어스 컬럼을 만들 때, 결측치가 생길 시 imputation 해주세요. ex) mean... etc. *np.nan은 불가
-        # tip) imputation 이 어렵다면, 이전 대회의 age 범주화 같은 방법을 사용해 카테고리 컬럼으로 만들어 주세요.
-        #################################
-
-        # TODO: merge 하면 그대로 eda 진행 후 test_df 따로 떼주세요. 하단은 merge 없는 예
-        # fe_num = f'[{self.__class__.__name__}]' # <- 클래스 번호 출력용.
-        train_df['interaction1'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-        test_df['interaction1'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-    
-        train_df['interaction2'] = train_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
-        test_df['interaction2'] = test_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
-
-        train_df['interaction3'] = train_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
-        test_df['interaction3'] = test_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
-
-        train_df['interaction4'] = train_df.groupby(['userID','testId'])[['interaction3']].shift()['interaction3']
-        test_df['interaction4'] = test_df.groupby(['userID','testId'])[['interaction3']].shift()['interaction3']
-
-
-
-        train_df['testId_large'] = train_df['testId'].apply(lambda s: s[2])
-        test_df['testId_large'] = test_df['testId'].apply(lambda s: s[2])
+        # TODO: merge한 DataFrame(merged)을 이용하여 feature engineering 진행 후, test_df에 새로 생성된 feature들을 merge해주는 방법
+        fe_num = f'[{self.__class__.__name__}]' # <- 클래스 번호 출력용.
+        def percentile(s):
+            return np.sum(s) / len(s)
         
-      
-        # 카테고리 컬럼 끝 _c 붙여주세요.
-        train_df = train_df.rename(columns=
-            {
-                'assessmentItemID': 'assessmentItemID_c', # 기본 1
-                'testId': 'testId_c', # 기본 2
-                'KnowledgeTag': 'KnowledgeTag_c', # 기본 3
-                'interaction1' : 'interaction1_c',
-                'interaction2' : 'interaction2_c',
-                'interaction3' : 'interaction3_c',
-                'interaction4' : 'interaction4_c',
-                'testId_large' : 'testId_large_c',
-            }
-        )
-        test_df = test_df.rename(columns=
-            {
-                'assessmentItemID' : 'assessmentItemID_c', # 기본 1
-                'testId' : 'testId_c', # 기본 2
-                'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
-                'interaction1' : 'interaction1_c',
-                'interaction2' : 'interaction2_c',
-                'interaction3' : 'interaction3_c',
-                'interaction4' : 'interaction4_c',
-                'testId_large' : 'testId_large_c',
-            }
-        )
-        return train_df, test_df
-
-
-class FE17(FeatureEngineer):
-    def __str__(self):
-        return \
-            """inter 1, 2, 3, 4 추가
-            testId 대분류 추가(난이도 판별됨)
-            assessment 별 정답률 카테고라이즈 추가 (문항별 난이도느낌)
-            """
-    def feature_engineering(self, train_df:pd.DataFrame, test_df:pd.DataFrame) -> pd.DataFrame:
-        #################################
-        # 완전 베이스 데이터로 시작합니다.
-        #
-        # Timestamp 컬럼은 이후 버려집니다. 버리실 필요 없습니다.
-        # userID, answerCode 는 수정할 수 없습니다. test 의 -1 로 되어있는 부분 그대로 가져갑니다. (컬럼 위치 변경은 가능합니다.)
-        # 새 카테고리 컬럼을 만들 때, 결측치가 생길 시 np.nan 으로 채워주세요. *'None', -1 등 불가
-        # 새 컨티뉴어스 컬럼을 만들 때, 결측치가 생길 시 imputation 해주세요. ex) mean... etc. *np.nan은 불가
-        # tip) imputation 이 어렵다면, 이전 대회의 age 범주화 같은 방법을 사용해 카테고리 컬럼으로 만들어 주세요.
-        #################################
-
-        # TODO: merge 하면 그대로 eda 진행 후 test_df 따로 떼주세요. 하단은 merge 없는 예
-        # fe_num = f'[{self.__class__.__name__}]' # <- 클래스 번호 출력용.
-        train_df['interaction1'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-        test_df['interaction1'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-    
-        train_df['interaction2'] = train_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
-        test_df['interaction2'] = test_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
-
-        train_df['interaction3'] = train_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
-        test_df['interaction3'] = test_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
-
-        train_df['interaction4'] = train_df.groupby(['userID','testId'])[['interaction3']].shift()['interaction3']
-        test_df['interaction4'] = test_df.groupby(['userID','testId'])[['interaction3']].shift()['interaction3']
-
-
-
-        train_df['testId_large'] = train_df['testId'].apply(lambda s: s[2])
-        test_df['testId_large'] = test_df['testId'].apply(lambda s: s[2])
-
-        def categorize(x):
-            if  x <= 0.1:
+        # grade를 나누기 위한 grade_map 함수 정의
+        def grade_map(x : float):
+            if x <= 0.4:
                 return 0
-            elif 0.1 < x <= 0.2:
+            elif 0.4< x <0.8:
                 return 1
-            elif 0.2 < x <= 0.3:
+            elif x >= 0.8:
                 return 2
-            elif 0.3 < x <= 0.4:
-                return 3
-            elif 0.4 < x <= 0.5:
-                return 4
-            elif 0.5 < x <= 0.6:
-                return 5
-            elif 0.6 < x <= 0.7:
-                return 6
-            elif 0.7 < x <= 0.8:
-                return 7
-            elif 0.8 < x <= 0.9:
-                return 8
-            else:
-                return 9
+        
+        numeric_col = []
+
+        #### 1. train_df, test_df 에서 interaction, elapsed 구해놓기 ####
+        # train_df = pd.read_csv('../data/train_data.csv')
+        # test_df = pd.read_csv('../data/test_data.csv')
+        train_df['Timestamp'] = pd.to_datetime(train_df['Timestamp'], format="%Y-%m-%d %H:%M:%S")
+        test_df['Timestamp'] = pd.to_datetime(test_df['Timestamp'], format="%Y-%m-%d %H:%M:%S")
+        train_df['interaction'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode'].fillna(-1).astype(np.int16)
+        test_df['interaction'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode'].fillna(-1).astype(np.int16)
+        # interaction2
+        train_df['interaction_2'] = train_df.groupby(['userID','testId'])[['answerCode']].shift(2)['answerCode'].fillna(-1).astype(np.int16)
+        test_df['interaction_2'] = test_df.groupby(['userID','testId'])[['answerCode']].shift(2)['answerCode'].fillna(-1).astype(np.int16)
+        # interaction3
+        train_df['interaction_3'] = train_df.groupby(['userID','testId'])[['answerCode']].shift(3)['answerCode'].fillna(-1).astype(np.int16)
+        test_df['interaction_3'] = test_df.groupby(['userID','testId'])[['answerCode']].shift(3)['answerCode'].fillna(-1).astype(np.int16)
+
+        diff = train_df.loc[:, ['userID','testId','Timestamp']].groupby(['userID','testId']).diff().fillna(pd.Timedelta(seconds=0))
+        diff = diff['Timestamp'].apply(lambda x: x.total_seconds())
+        train_df['elapsed'] = pd.concat([diff[1:], pd.Series([0.0])]).reset_index().iloc[:,1]  # 걸린 시간
+
+        diff = test_df.loc[:, ['userID','testId','Timestamp']].groupby(['userID','testId']).diff().fillna(pd.Timedelta(seconds=0))
+        diff = diff['Timestamp'].apply(lambda x: x.total_seconds())
+        test_df['elapsed'] = pd.concat([diff[1:], pd.Series([0.0])]).reset_index().iloc[:,1]  # 걸린 시간        
+        
+        #### 2. test_df 에서 test_tmp, test_last_sequence 떼어내기 ####
+        # - test_tmp : not -1
+        # - test_last_sequence : only -1
+        # merge를 하기 위해서 test_df에서 -1을 answerCode로 갖는 행을 제외한 df 생성
+        test_tmp = test_df[test_df.answerCode != -1]
+        test_last_sequence = test_df[test_df.answerCode == -1]
+
+        #### 3. train_df + test_tmp = merged 로 concat하기 ####
+        # merge후, interaction항 추가 해줌
+        merged = pd.concat([train_df,test_tmp],axis=0)
+        merged.sort_values(['userID','Timestamp'], inplace=True)
+        merged = merged.reset_index(drop=True) #.drop('index', axis=1)
+        
+        #### 4. merged 기준으로 FE를 진행, test_tmp와 test_last_sequence에도 각각의 정보(userID, assessmentItemID)를 이용해서 mapping ####
+        ## 1. stu_groupby_merged : counts, user_grade 추가 ##
+        stu_groupby_merged = merged.groupby('userID').agg({
+            'assessmentItemID': 'count',
+            'answerCode': percentile
+        })
+        stu_groupby_merged.columns = ['counts', 'meanAnswerRate'] # groupby 집계, counts : 유저가 푼 문제의 개수
+
+        stu_groupby_merged['user_grade'] = stu_groupby_merged['meanAnswerRate'].apply(grade_map) # 유저의 평균 정답률을 이용한 실력,등급 정의
+        merged['user_grade'] = merged['userID'].map(stu_groupby_merged['user_grade']) # merged mapping
+        test_tmp['user_grade'] = test_tmp['userID'].map(stu_groupby_merged['user_grade']) # test_tmp mapping
+        test_last_sequence['user_grade'] = test_last_sequence['userID'].map(stu_groupby_merged['user_grade']) # test_last_sequence mapping
+
+        ## 2. prob_groupby : assessmentItemID 이용한 FE ## 
+        prob_groupby = merged.groupby('assessmentItemID').agg({
+            'userID': 'count',
+            'answerCode': percentile
+        })
+        prob_groupby.columns = ['numUsers', 'meanAnswerRate'] # groupby 집계, numUsers : 문제를 푼 유저는 몇명인지
+        prob_groupby['ass_grade'] = prob_groupby['meanAnswerRate'].apply(grade_map) # 문제 평균 정답률을 이용한 난이도 정의
+        merged['ass_grade'] = merged['assessmentItemID'].map(prob_groupby['ass_grade']) # merged mapping
+        test_tmp['ass_grade'] = test_tmp['assessmentItemID'].map(prob_groupby['ass_grade']) # test_tmp mapping
+        test_last_sequence['ass_grade'] = test_last_sequence['assessmentItemID'].map(prob_groupby['ass_grade']) # test_last_sequence mapping
+
+        # 시험지의 각 문항 별 평균 정답률
+        asses_mean = merged.groupby('assessmentItemID')['answerCode'].mean()
+        merged['asses_mean'] = merged['assessmentItemID'].map(asses_mean)
+        test_last_sequence['asses_mean'] = test_last_sequence['assessmentItemID'].map(asses_mean)
+        test_tmp['asses_mean'] = test_tmp['assessmentItemID'].map(asses_mean)
+        numeric_col.append('asses_mean')
+
+        # FE04 에서 maxprob feature 추가하는 방법 참고
+        # 각 시험 속 문항번호를 수치형으로 만들어 추가한다.
+        merged['probnum'] = merged['assessmentItemID'].apply(lambda x: int(x[-3:]))
+        test_tmp['probnum'] = test_tmp['assessmentItemID'].apply(lambda x: int(x[-3:]))
+        test_last_sequence['probnum'] =test_last_sequence['assessmentItemID'].apply(lambda x: int(x[-3:]))
+
+        # 위 번호를 토대로 각 시험의 최종 문항을 피쳐로 추가한다.
+        merged_tmp = merged.groupby('testId')
+        merged_tmp = merged_tmp['probnum'].max()
+        merged['maxprob'] = merged['testId'].map(merged_tmp)
+
+        test_tmp['maxprob'] = test_tmp['testId'].map(merged_tmp)
+        test_last_sequence['maxprob'] = test_last_sequence['testId'].map(merged_tmp)
+        merged.drop(['probnum'], axis=1, inplace=True)
+        test_tmp.drop(['probnum'], axis=1, inplace=True)
+        test_last_sequence.drop(['probnum'], axis=1, inplace=True)
+
+        
+        #### 4-1 : merged 에서 elapsed가 0인 문제들 대치 해주기
+        # - 보통 시험의 마지막 문제는 elapsed가 0이다. (그 문제를 풀고 끝나기 때문에, 얼마나 걸렸는지 알 수가 없고, 그렇기 때문에 그 값을 0으로 대치하는 느낌)
+        # - **이 값들을 효과적으로 대치할 수 있으면, test_last_sequence에 elapsed를 효과적으로 전달할 수 있기 때문에 미리 진행**
+        # - 우선 merged에서, 시간이 900초 이상 (15분 이상)소요된 풀이시간은 모두 900초로 대치해주자 (대략 31421건)
+        merged['elapsed'] = merged['elapsed'].apply(lambda x : 900 if x > 900 else x)
+
+        # - elapsed가 0이 아닌것과 0인것을 나눠서 일단 쪼개고 (인덱스는 건들지 말자), elapsed가 0인 data frame에 유저별 문제풀이 시간의 중앙값으로 대치하고 다시 합쳐주자
+        # - 합칠때는 concat으로 위아래로 붙인다음에 index 기준 정렬
+        merged_elapsed_not0 = merged[merged.elapsed != 0]
+        merged_elapsed_0 = merged[merged.elapsed == 0]
+        merged_elapsed_0['elapsed'] = merged_elapsed_0['userID'].map(merged.groupby('userID')['elapsed'].median())
+
+        merged = pd.concat([merged_elapsed_not0,merged_elapsed_0], axis=0)
+        merged = merged.sort_index()
+        
+        # - 이제 test_last_sequence에 있는 elapsed가 0인 애들은, 다른 사람들은 그 문제를 푸는데 얼마나 걸렸는지를 기준으로 대치할 수 있게 되었다
+        test_last_sequence['elapsed'] = test_last_sequence['assessmentItemID'].map(merged.groupby('assessmentItemID')['elapsed'].median())
+
+        ########### ----------------------------------- ###########
+        ########### test_tmp랑 test_sequence랑 합쳐준다 ###########
+        # - 그러고 합치자 (test_tmp랑 test_last_sequence랑)
+        test_df = pd.concat([test_tmp, test_last_sequence], axis=0).sort_index()
+
+        # - 이제 elapsed가 잘 대치 되어있기 때문에, mark_randomly feature를 만들 수 있다.
+        merged['mark_randomly'] = merged['elapsed'].apply(lambda x: int((x>0) & (x<=5)))     # 걸린 시간이 1초에서 5초 사이는 평균 정답률이 너무 낮아서 찍은 걸로 간주
+        test_df['mark_randomly'] = test_df['elapsed'].apply(lambda x: int((x>0) & (x<=5)))     # 걸린 시간이 1초에서 5초 사이는 평균 정답률이 너무 낮아서 찍은 걸로 간주
 
 
-        train_assessment_rates = train_df.groupby('assessmentItemID')['answerCode'].mean()
+        #### 4-2 : 문제 푸는데 걸린 시간의 이동평균
+        # - elapsed를 이용
+        # - 현재 값을 포함한 order 개수의 elapsed 평균값
 
-        train_df['assessment_rate'] = train_df['assessmentItemID'].map(train_assessment_rates.map(categorize))
-        test_df['assessment_rate'] = test_df['assessmentItemID'].map(train_assessment_rates.map(categorize))
+        def ma_time(df, order, decimals=3): 
+            # decimals: 소수점 몇자리까지 볼지
+            # order: 이동평균을 계산할 때 전 데이터 중 몇 개를 평균낼지
+
+            df[f'elapsed_ma_{order}'] = df.groupby(['userID'])['elapsed'].rolling(order).mean().values
+            df[f'elapsed_ma_{order}'] = df[f'elapsed_ma_{order}'].apply(lambda x: round(x, decimals))
+
+            # 결측치 처리 - 유저마다 결측치에서 가장 가까운 elapsed_ma 값으로 동일하게 바꿔줌
+            fill_nearest = lambda x: x.fillna(x.iloc[order-1, :])
+            df[f'elapsed_ma_{order}'] = df.loc[:, ['userID', f'elapsed_ma_{order}']].groupby('userID').apply(fill_nearest)[f'elapsed_ma_{order}']
+        
+            return df         
+        
+        # order를 4,5,6 까지 시도
+        for order in range(4,7):
+            merged = ma_time(merged, order)
+            test_df = ma_time(test_df, order)
+
+            numeric_col.append(f'elapsed_ma_{order}')
 
 
+        # KnowledgeTag 빼기 
+        merged = merged.drop('KnowledgeTag', axis=1)
+        test_df = test_df.drop('KnowledgeTag', axis=1)
+
+        # 수치형 feature 정규화
+        scaler = StandardScaler()
+        scaler.fit(merged[numeric_col])
+        merged[numeric_col] = scaler.transform(merged[numeric_col])
+        test_df[numeric_col] = scaler.transform(test_df[numeric_col])
+        
+        # data leakage 허용 : merged가 train data 의 역할을 하자
+        train_df = merged
         # 카테고리 컬럼 끝 _c 붙여주세요.
         train_df = train_df.rename(columns=
             {
-                'assessmentItemID': 'assessmentItemID_c', # 기본 1
-                'testId': 'testId_c', # 기본 2
-                'KnowledgeTag': 'KnowledgeTag_c', # 기본 3
-                'interaction1' : 'interaction1_c',
-                'interaction2' : 'interaction2_c',
-                'interaction3' : 'interaction3_c',
-                'interaction4' : 'interaction4_c',
-                'testId_large' : 'testId_large_c',
-                # 'test_rate' : 'test_rate_c',
-                'assessment_rate' : 'assessment_rate_c',
-                # 'user_rate' : 'user_rate_c',
-                # # 'train_know_rates': 'train_know_rates_c',
+                'assessmentItemID' : 'assessmentItemID_c', # 기본 1
+                'testId' : 'testId_c', # 기본 2
+                'interaction' : 'interaction_c',
+                'interaction_2' : 'interaction_2_c',
+                'interaction_3' : 'interaction_3_c',
+                'user_grade' : 'user_grade_c',
+                'ass_grade' : 'ass_grade_c',
+                'mark_randomly' : 'mark_randomly_c'
             }
         )
         test_df = test_df.rename(columns=
             {
                 'assessmentItemID' : 'assessmentItemID_c', # 기본 1
                 'testId' : 'testId_c', # 기본 2
-                'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
-                'interaction1' : 'interaction1_c',
-                'interaction2' : 'interaction2_c',
-                'interaction3' : 'interaction3_c',
-                'interaction4' : 'interaction4_c',
-                'testId_large' : 'testId_large_c',
-                # 'test_rate' : 'test_rate_c',
-                'assessment_rate' : 'assessment_rate_c',
-                # 'user_rate' : 'user_rate_c',
-                # # 'train_know_rates': 'train_know_rates_c',
-            }
-        )
-        return train_df, test_df
-
-
-class FE18(FeatureEngineer):
-    def __str__(self):
-        return \
-            """inter 1, 2, 3, 4 추가
-            testId 대분류 추가(난이도 판별됨)
-            assessment 별 정답률 카테고라이즈 추가 (문항별 난이도느낌)
-            user 별 푼 문제들에 대한 평균 정답률 추가
-            """
-    def feature_engineering(self, train_df:pd.DataFrame, test_df:pd.DataFrame) -> pd.DataFrame:
-        #################################
-        # 완전 베이스 데이터로 시작합니다.
-        #
-        # Timestamp 컬럼은 이후 버려집니다. 버리실 필요 없습니다.
-        # userID, answerCode 는 수정할 수 없습니다. test 의 -1 로 되어있는 부분 그대로 가져갑니다. (컬럼 위치 변경은 가능합니다.)
-        # 새 카테고리 컬럼을 만들 때, 결측치가 생길 시 np.nan 으로 채워주세요. *'None', -1 등 불가
-        # 새 컨티뉴어스 컬럼을 만들 때, 결측치가 생길 시 imputation 해주세요. ex) mean... etc. *np.nan은 불가
-        # tip) imputation 이 어렵다면, 이전 대회의 age 범주화 같은 방법을 사용해 카테고리 컬럼으로 만들어 주세요.
-        #################################
-
-        # TODO: merge 하면 그대로 eda 진행 후 test_df 따로 떼주세요. 하단은 merge 없는 예
-        # fe_num = f'[{self.__class__.__name__}]' # <- 클래스 번호 출력용.
-        train_df['interaction1'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-        test_df['interaction1'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-    
-        train_df['interaction2'] = train_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
-        test_df['interaction2'] = test_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
-
-        train_df['interaction3'] = train_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
-        test_df['interaction3'] = test_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
-
-        train_df['interaction4'] = train_df.groupby(['userID','testId'])[['interaction3']].shift()['interaction3']
-        test_df['interaction4'] = test_df.groupby(['userID','testId'])[['interaction3']].shift()['interaction3']
-
-
-
-        train_df['testId_large'] = train_df['testId'].apply(lambda s: s[2])
-        test_df['testId_large'] = test_df['testId'].apply(lambda s: s[2])
-
-        
-        def categorize(x):
-            if  x <= 0.1:
-                return 0
-            elif 0.1 < x <= 0.2:
-                return 1
-            elif 0.2 < x <= 0.3:
-                return 2
-            elif 0.3 < x <= 0.4:
-                return 3
-            elif 0.4 < x <= 0.5:
-                return 4
-            elif 0.5 < x <= 0.6:
-                return 5
-            elif 0.6 < x <= 0.7:
-                return 6
-            elif 0.7 < x <= 0.8:
-                return 7
-            elif 0.8 < x <= 0.9:
-                return 8
-            else:
-                return 9
-
-
-        train_assessment_rates = train_df.groupby('assessmentItemID')['answerCode'].mean()
-
-        train_df['assessment_rate'] = train_df['assessmentItemID'].map(train_assessment_rates.map(categorize))
-        test_df['assessment_rate'] = test_df['assessmentItemID'].map(train_assessment_rates.map(categorize))
-
-
-
-        train_user_rate = train_df.groupby('userID')['answerCode'].mean()
-        test_user_rate = test_df.groupby('userID')['answerCode'].mean()
-
-        train_df['user_rate'] = train_df['userID'].map(train_user_rate.map(categorize))
-        test_df['user_rate'] = test_df['userID'].map(test_user_rate.map(categorize))
-        
-
-        # 카테고리 컬럼 끝 _c 붙여주세요.
-        train_df = train_df.rename(columns=
-            {
-                'assessmentItemID': 'assessmentItemID_c', # 기본 1
-                'testId': 'testId_c', # 기본 2
-                'KnowledgeTag': 'KnowledgeTag_c', # 기본 3
-                'interaction1' : 'interaction1_c',
-                'interaction2' : 'interaction2_c',
-                'interaction3' : 'interaction3_c',
-                'interaction4' : 'interaction4_c',
-                'testId_large' : 'testId_large_c',
-                # 'test_rate' : 'test_rate_c',
-                'assessment_rate' : 'assessment_rate_c',
-                'user_rate' : 'user_rate_c',
-                # 'train_know_rates': 'train_know_rates_c',
-            }
-        )
-        test_df = test_df.rename(columns=
-            {
-                'assessmentItemID' : 'assessmentItemID_c', # 기본 1
-                'testId' : 'testId_c', # 기본 2
-                'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
-                'interaction1' : 'interaction1_c',
-                'interaction2' : 'interaction2_c',
-                'interaction3' : 'interaction3_c',
-                'interaction4' : 'interaction4_c',
-                'testId_large' : 'testId_large_c',
-                # 'test_rate' : 'test_rate_c',
-                'assessment_rate' : 'assessment_rate_c',
-                'user_rate' : 'user_rate_c',
-                # 'train_know_rates': 'train_know_rates_c',
-            }
-        )
-        return train_df, test_df
-
-
-class FE19(FeatureEngineer):
-    def __str__(self):
-        return \
-            """inter 1, 2, 3, 4 추가
-            testId 대분류 추가(난이도 판별됨)
-            assessment 별 정답률 카테고라이즈 추가 (문항별 난이도느낌)
-            user 별 푼 문제들에 대한 평균 정답률 추가
-            유저, 시험별 타임 일랩스 추가
-            """
-    def feature_engineering(self, train_df:pd.DataFrame, test_df:pd.DataFrame) -> pd.DataFrame:
-        #################################
-        # 완전 베이스 데이터로 시작합니다.
-        #
-        # Timestamp 컬럼은 이후 버려집니다. 버리실 필요 없습니다.
-        # userID, answerCode 는 수정할 수 없습니다. test 의 -1 로 되어있는 부분 그대로 가져갑니다. (컬럼 위치 변경은 가능합니다.)
-        # 새 카테고리 컬럼을 만들 때, 결측치가 생길 시 np.nan 으로 채워주세요. *'None', -1 등 불가
-        # 새 컨티뉴어스 컬럼을 만들 때, 결측치가 생길 시 imputation 해주세요. ex) mean... etc. *np.nan은 불가
-        # tip) imputation 이 어렵다면, 이전 대회의 age 범주화 같은 방법을 사용해 카테고리 컬럼으로 만들어 주세요.
-        #################################
-
-        # TODO: merge 하면 그대로 eda 진행 후 test_df 따로 떼주세요. 하단은 merge 없는 예
-        # fe_num = f'[{self.__class__.__name__}]' # <- 클래스 번호 출력용.
-        train_df['interaction1'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-        test_df['interaction1'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-    
-        train_df['interaction2'] = train_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
-        test_df['interaction2'] = test_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
-
-        train_df['interaction3'] = train_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
-        test_df['interaction3'] = test_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
-
-        train_df['interaction4'] = train_df.groupby(['userID','testId'])[['interaction3']].shift()['interaction3']
-        test_df['interaction4'] = test_df.groupby(['userID','testId'])[['interaction3']].shift()['interaction3']
-
-
-
-        train_df['testId_large'] = train_df['testId'].apply(lambda s: s[2])
-        test_df['testId_large'] = test_df['testId'].apply(lambda s: s[2])
-
-        def categorize(x):
-            if  x <= 0.1:
-                return 0
-            elif 0.1 < x <= 0.2:
-                return 1
-            elif 0.2 < x <= 0.3:
-                return 2
-            elif 0.3 < x <= 0.4:
-                return 3
-            elif 0.4 < x <= 0.5:
-                return 4
-            elif 0.5 < x <= 0.6:
-                return 5
-            elif 0.6 < x <= 0.7:
-                return 6
-            elif 0.7 < x <= 0.8:
-                return 7
-            elif 0.8 < x <= 0.9:
-                return 8
-            else:
-                return 9
-
-
-        train_assessment_rates = train_df.groupby('assessmentItemID')['answerCode'].mean()
-
-        train_df['assessment_rate'] = train_df['assessmentItemID'].map(train_assessment_rates.map(categorize))
-        test_df['assessment_rate'] = test_df['assessmentItemID'].map(train_assessment_rates.map(categorize))
-
-
-
-        train_user_rate = train_df.groupby('userID')['answerCode'].mean()
-        test_user_rate = test_df.groupby('userID')['answerCode'].mean()
-
-        train_df['user_rate'] = train_df['userID'].map(train_user_rate.map(categorize))
-        test_df['user_rate'] = test_df['userID'].map(test_user_rate.map(categorize))
-        
-
-
-        
-        train_df['Timestamp'] = pd.to_datetime(train_df['Timestamp'])
-        train_df['elapse'] = train_df.groupby(['userID'])['Timestamp'].diff(1).shift(-1)
-        train_df.loc[train_df['testId'] != train_df['testId'].shift(-1), 'elapse'] = pd.NaT
-        train_df['elapse'] = train_df['elapse'].dt.seconds
-        train_df.loc[(train_df['elapse'] > 600) | (train_df['elapse'] < 2), 'elapse'] = np.nan
-        train_df['elapse'].fillna(0)
-
-        test_df['Timestamp'] = pd.to_datetime(test_df['Timestamp'])
-        test_df['elapse'] = test_df.groupby(['userID'])['Timestamp'].diff(1).shift(-1)
-        test_df.loc[test_df['testId'] != test_df['testId'].shift(-1), 'elapse'] = pd.NaT
-        test_df['elapse'] = test_df['elapse'].dt.seconds
-        test_df.loc[(test_df['elapse'] > 600) | (test_df['elapse'] < 2), 'elapse'] = np.nan
-        test_df['elapse'].fillna(0)
-
-
-        # 카테고리 컬럼 끝 _c 붙여주세요.
-        train_df = train_df.rename(columns=
-            {
-                'assessmentItemID': 'assessmentItemID_c', # 기본 1
-                'testId': 'testId_c', # 기본 2
-                'KnowledgeTag': 'KnowledgeTag_c', # 기본 3
-                'interaction1' : 'interaction1_c',
-                'interaction2' : 'interaction2_c',
-                'interaction3' : 'interaction3_c',
-                'interaction4' : 'interaction4_c',
-                'testId_large' : 'testId_large_c',
-                # 'test_rate' : 'test_rate_c',
-                'assessment_rate' : 'assessment_rate_c',
-                'user_rate' : 'user_rate_c',
-                # 'train_know_rates': 'train_know_rates_c',
-            }
-        )
-        test_df = test_df.rename(columns=
-            {
-                'assessmentItemID' : 'assessmentItemID_c', # 기본 1
-                'testId' : 'testId_c', # 기본 2
-                'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
-                'interaction1' : 'interaction1_c',
-                'interaction2' : 'interaction2_c',
-                'interaction3' : 'interaction3_c',
-                'interaction4' : 'interaction4_c',
-                'testId_large' : 'testId_large_c',
-                # 'test_rate' : 'test_rate_c',
-                'assessment_rate' : 'assessment_rate_c',
-                'user_rate' : 'user_rate_c',
-                # 'train_know_rates': 'train_know_rates_c',
-            }
-        )
-        return train_df, test_df
-
-
-class FE20(FeatureEngineer):
-    def __str__(self):
-        return \
-            """inter 1, 2, 3, 4 추가
-            testId 대분류 추가(난이도 판별됨)
-            assessment 별 정답률 카테고라이즈 추가 (문항별 난이도느낌)
-            user 별 푼 문제들에 대한 평균 정답률 추가
-            유저, 시험별 타임 일랩스 추가
-            지식태그별 정답률 추가
-            """
-    def feature_engineering(self, train_df:pd.DataFrame, test_df:pd.DataFrame) -> pd.DataFrame:
-        #################################
-        # 완전 베이스 데이터로 시작합니다.
-        #
-        # Timestamp 컬럼은 이후 버려집니다. 버리실 필요 없습니다.
-        # userID, answerCode 는 수정할 수 없습니다. test 의 -1 로 되어있는 부분 그대로 가져갑니다. (컬럼 위치 변경은 가능합니다.)
-        # 새 카테고리 컬럼을 만들 때, 결측치가 생길 시 np.nan 으로 채워주세요. *'None', -1 등 불가
-        # 새 컨티뉴어스 컬럼을 만들 때, 결측치가 생길 시 imputation 해주세요. ex) mean... etc. *np.nan은 불가
-        # tip) imputation 이 어렵다면, 이전 대회의 age 범주화 같은 방법을 사용해 카테고리 컬럼으로 만들어 주세요.
-        #################################
-
-        # TODO: merge 하면 그대로 eda 진행 후 test_df 따로 떼주세요. 하단은 merge 없는 예
-        # fe_num = f'[{self.__class__.__name__}]' # <- 클래스 번호 출력용.
-        train_df['interaction1'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-        test_df['interaction1'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-    
-        train_df['interaction2'] = train_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
-        test_df['interaction2'] = test_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
-
-        train_df['interaction3'] = train_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
-        test_df['interaction3'] = test_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
-
-        train_df['interaction4'] = train_df.groupby(['userID','testId'])[['interaction3']].shift()['interaction3']
-        test_df['interaction4'] = test_df.groupby(['userID','testId'])[['interaction3']].shift()['interaction3']
-
-
-
-        train_df['testId_large'] = train_df['testId'].apply(lambda s: s[2])
-        test_df['testId_large'] = test_df['testId'].apply(lambda s: s[2])
-
-        def categorize(x):
-            if  x <= 0.1:
-                return 0
-            elif 0.1 < x <= 0.2:
-                return 1
-            elif 0.2 < x <= 0.3:
-                return 2
-            elif 0.3 < x <= 0.4:
-                return 3
-            elif 0.4 < x <= 0.5:
-                return 4
-            elif 0.5 < x <= 0.6:
-                return 5
-            elif 0.6 < x <= 0.7:
-                return 6
-            elif 0.7 < x <= 0.8:
-                return 7
-            elif 0.8 < x <= 0.9:
-                return 8
-            else:
-                return 9
-
-
-        train_assessment_rates = train_df.groupby('assessmentItemID')['answerCode'].mean()
-
-        train_df['assessment_rate'] = train_df['assessmentItemID'].map(train_assessment_rates.map(categorize))
-        test_df['assessment_rate'] = test_df['assessmentItemID'].map(train_assessment_rates.map(categorize))
-
-
-
-        train_user_rate = train_df.groupby('userID')['answerCode'].mean()
-        test_user_rate = test_df.groupby('userID')['answerCode'].mean()
-
-        train_df['user_rate'] = train_df['userID'].map(train_user_rate.map(categorize))
-        test_df['user_rate'] = test_df['userID'].map(test_user_rate.map(categorize))
-        
-        
-
-
-        train_df['Timestamp'] = pd.to_datetime(train_df['Timestamp'])
-        train_df['elapse'] = train_df.groupby(['userID'])['Timestamp'].diff(1).shift(-1)
-        train_df.loc[train_df['testId'] != train_df['testId'].shift(-1), 'elapse'] = pd.NaT
-        train_df['elapse'] = train_df['elapse'].dt.seconds
-        train_df.loc[(train_df['elapse'] > 600) | (train_df['elapse'] < 2), 'elapse'] = np.nan
-        train_df['elapse'].fillna(0)
-
-        test_df['Timestamp'] = pd.to_datetime(test_df['Timestamp'])
-        test_df['elapse'] = test_df.groupby(['userID'])['Timestamp'].diff(1).shift(-1)
-        test_df.loc[test_df['testId'] != test_df['testId'].shift(-1), 'elapse'] = pd.NaT
-        test_df['elapse'] = test_df['elapse'].dt.seconds
-        test_df.loc[(test_df['elapse'] > 600) | (test_df['elapse'] < 2), 'elapse'] = np.nan
-        test_df['elapse'].fillna(0)
-
-        # train_df['window5'] = train_df.groupby('userID')['answerCode'].rolling(window=5).mean().reset_index()['answerCode']
-        # test_df['window5'] = test_df.groupby('userID')['answerCode'].rolling(window=5).mean().reset_index()['answerCode']
-
-
-
-        train_know_rates = train_df.groupby('KnowledgeTag')['answerCode'].mean()
-
-        train_df['know_rates'] = train_df['KnowledgeTag'].map(train_know_rates.map(categorize))
-        test_df['know_rates'] = test_df['KnowledgeTag'].map(train_know_rates.map(categorize))
-
-        # 카테고리 컬럼 끝 _c 붙여주세요.
-        train_df = train_df.rename(columns=
-            {
-                'assessmentItemID': 'assessmentItemID_c', # 기본 1
-                'testId': 'testId_c', # 기본 2
-                'KnowledgeTag': 'KnowledgeTag_c', # 기본 3
-                'interaction1' : 'interaction1_c',
-                'interaction2' : 'interaction2_c',
-                'interaction3' : 'interaction3_c',
-                'interaction4' : 'interaction4_c',
-                'testId_large' : 'testId_large_c',
-                # 'test_rate' : 'test_rate_c',
-                'assessment_rate' : 'assessment_rate_c',
-                'user_rate' : 'user_rate_c',
-                'train_know_rates': 'train_know_rates_c',
-            }
-        )
-        test_df = test_df.rename(columns=
-            {
-                'assessmentItemID' : 'assessmentItemID_c', # 기본 1
-                'testId' : 'testId_c', # 기본 2
-                'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
-                'interaction1' : 'interaction1_c',
-                'interaction2' : 'interaction2_c',
-                'interaction3' : 'interaction3_c',
-                'interaction4' : 'interaction4_c',
-                'testId_large' : 'testId_large_c',
-                # 'test_rate' : 'test_rate_c',
-                'assessment_rate' : 'assessment_rate_c',
-                'user_rate' : 'user_rate_c',
-                'train_know_rates': 'train_know_rates_c',
+                'interaction' : 'interaction_c',
+                'interaction_2' : 'interaction_2_c',
+                'interaction_3' : 'interaction_3_c',
+                'user_grade' : 'user_grade_c',
+                'ass_grade' : 'ass_grade_c',
+                'mark_randomly' : 'mark_randomly_c'
             }
         )
         return train_df, test_df
     
-
-
-class FE21(FeatureEngineer):
-    def __str__(self):
-        return \
-            """inter 1, 2, 3, 4 추가
-            testId 대분류 추가(난이도 판별됨)
-            assessment 별 정답률 카테고라이즈 추가 (문항별 난이도느낌)
-            user 별 푼 문제들에 대한 평균 정답률 추가
-            유저, 시험별 타임 일랩스 추가
-            모두 머지 적용
-            """
-    def feature_engineering(self, train_df:pd.DataFrame, test_df:pd.DataFrame) -> pd.DataFrame:
-        #################################
-        # 완전 베이스 데이터로 시작합니다.
-        #
-        # Timestamp 컬럼은 이후 버려집니다. 버리실 필요 없습니다.
-        # userID, answerCode 는 수정할 수 없습니다. test 의 -1 로 되어있는 부분 그대로 가져갑니다. (컬럼 위치 변경은 가능합니다.)
-        # 새 카테고리 컬럼을 만들 때, 결측치가 생길 시 np.nan 으로 채워주세요. *'None', -1 등 불가
-        # 새 컨티뉴어스 컬럼을 만들 때, 결측치가 생길 시 imputation 해주세요. ex) mean... etc. *np.nan은 불가
-        # tip) imputation 이 어렵다면, 이전 대회의 age 범주화 같은 방법을 사용해 카테고리 컬럼으로 만들어 주세요.
-        #################################
-
-        # TODO: merge 하면 그대로 eda 진행 후 test_df 따로 떼주세요. 하단은 merge 없는 예
-        # fe_num = f'[{self.__class__.__name__}]' # <- 클래스 번호 출력용.
-        train_df['interaction1'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-        test_df['interaction1'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-    
-        train_df['interaction2'] = train_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
-        test_df['interaction2'] = test_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
-
-        train_df['interaction3'] = train_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
-        test_df['interaction3'] = test_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
-
-        train_df['interaction4'] = train_df.groupby(['userID','testId'])[['interaction3']].shift()['interaction3']
-        test_df['interaction4'] = test_df.groupby(['userID','testId'])[['interaction3']].shift()['interaction3']
-
-        merged_df = pd.concat([train_df, test_df[test_df['answerCode'] != -1]])
-
-        merged_df['testId_large'] = merged_df['testId'].apply(lambda s: s[2])
-        test_df['testId_large'] = test_df['testId'].apply(lambda s: s[2])
-
-        def categorize(x):
-            if  x <= 0.1:
-                return 0
-            elif 0.1 < x <= 0.2:
-                return 1
-            elif 0.2 < x <= 0.3:
-                return 2
-            elif 0.3 < x <= 0.4:
-                return 3
-            elif 0.4 < x <= 0.5:
-                return 4
-            elif 0.5 < x <= 0.6:
-                return 5
-            elif 0.6 < x <= 0.7:
-                return 6
-            elif 0.7 < x <= 0.8:
-                return 7
-            elif 0.8 < x <= 0.9:
-                return 8
-            else:
-                return 9
-
-
-        merged_assessment_rates = merged_df.groupby('assessmentItemID')['answerCode'].mean()
-
-        merged_df['assessment_rate'] = merged_df['assessmentItemID'].map(merged_assessment_rates.map(categorize))
-        test_df['assessment_rate'] = test_df['assessmentItemID'].map(merged_assessment_rates.map(categorize))
-
-
-        merged_user_rate = merged_df.groupby('userID')['answerCode'].mean()
-        test_user_rate = test_df.groupby('userID')['answerCode'].mean()
-
-        merged_df['user_rate'] = merged_df['userID'].map(merged_user_rate.map(categorize))
-        test_df['user_rate'] = test_df['userID'].map(test_user_rate.map(categorize))
-        
-
-
-        merged_df['Timestamp'] = pd.to_datetime(merged_df['Timestamp'])
-        merged_df['elapse'] = merged_df.groupby(['userID'])['Timestamp'].diff(1).shift(-1)
-        merged_df.loc[merged_df['testId'] != merged_df['testId'].shift(-1), 'elapse'] = pd.NaT
-        merged_df['elapse'] = merged_df['elapse'].dt.seconds
-        merged_df.loc[(merged_df['elapse'] > 600) | (merged_df['elapse'] < 2), 'elapse'] = np.nan
-        merged_df['elapse'].fillna(0)
-
-        test_df['Timestamp'] = pd.to_datetime(test_df['Timestamp'])
-        test_df['elapse'] = test_df.groupby(['userID'])['Timestamp'].diff(1).shift(-1)
-        test_df.loc[test_df['testId'] != test_df['testId'].shift(-1), 'elapse'] = pd.NaT
-        test_df['elapse'] = test_df['elapse'].dt.seconds
-        test_df.loc[(test_df['elapse'] > 600) | (test_df['elapse'] < 2), 'elapse'] = np.nan
-        test_df['elapse'].fillna(0)
-
-
-        # 카테고리 컬럼 끝 _c 붙여주세요.
-        merged_df = merged_df.rename(columns=
-            {
-                'assessmentItemID': 'assessmentItemID_c', # 기본 1
-                'testId': 'testId_c', # 기본 2
-                'KnowledgeTag': 'KnowledgeTag_c', # 기본 3
-                'interaction1' : 'interaction1_c',
-                'interaction2' : 'interaction2_c',
-                'interaction3' : 'interaction3_c',
-                'interaction4' : 'interaction4_c',
-                'testId_large' : 'testId_large_c',
-                # 'test_rate' : 'test_rate_c',
-                'assessment_rate' : 'assessment_rate_c',
-                'user_rate' : 'user_rate_c',
-                # 'train_know_rates': 'train_know_rates_c',
-            }
-        )
-        test_df = test_df.rename(columns=
-            {
-                'assessmentItemID' : 'assessmentItemID_c', # 기본 1
-                'testId' : 'testId_c', # 기본 2
-                'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
-                'interaction1' : 'interaction1_c',
-                'interaction2' : 'interaction2_c',
-                'interaction3' : 'interaction3_c',
-                'interaction4' : 'interaction4_c',
-                'testId_large' : 'testId_large_c',
-                # 'test_rate' : 'test_rate_c',
-                'assessment_rate' : 'assessment_rate_c',
-                'user_rate' : 'user_rate_c',
-                # 'train_know_rates': 'train_know_rates_c',
-            }
-        )
-        return merged_df, test_df
-
-
-class FE22(FeatureEngineer):
-    def __str__(self):
-        return \
-            """inter 1, 2, 3, 4 추가
-            testId 대분류 추가(난이도 판별됨)
-            assessment 별 정답률 카테고라이즈 추가 (문항별 난이도느낌)
-            user 별 푼 문제들에 대한 평균 정답률 추가
-            유저, 시험별 타임 일랩스 추가
-            모두 머지 적용
-            테스트 데이터만으로 학습
-            """
-    def feature_engineering(self, train_df:pd.DataFrame, test_df:pd.DataFrame) -> pd.DataFrame:
-        #################################
-        # 완전 베이스 데이터로 시작합니다.
-        #
-        # Timestamp 컬럼은 이후 버려집니다. 버리실 필요 없습니다.
-        # userID, answerCode 는 수정할 수 없습니다. test 의 -1 로 되어있는 부분 그대로 가져갑니다. (컬럼 위치 변경은 가능합니다.)
-        # 새 카테고리 컬럼을 만들 때, 결측치가 생길 시 np.nan 으로 채워주세요. *'None', -1 등 불가
-        # 새 컨티뉴어스 컬럼을 만들 때, 결측치가 생길 시 imputation 해주세요. ex) mean... etc. *np.nan은 불가
-        # tip) imputation 이 어렵다면, 이전 대회의 age 범주화 같은 방법을 사용해 카테고리 컬럼으로 만들어 주세요.
-        #################################
-
-        # TODO: merge 하면 그대로 eda 진행 후 test_df 따로 떼주세요. 하단은 merge 없는 예
-        # fe_num = f'[{self.__class__.__name__}]' # <- 클래스 번호 출력용.
-        train_df['interaction1'] = train_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-        test_df['interaction1'] = test_df.groupby(['userID','testId'])[['answerCode']].shift()['answerCode']
-    
-        train_df['interaction2'] = train_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
-        test_df['interaction2'] = test_df.groupby(['userID','testId'])[['interaction1']].shift()['interaction1']
-
-        train_df['interaction3'] = train_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
-        test_df['interaction3'] = test_df.groupby(['userID','testId'])[['interaction2']].shift()['interaction2']
-
-        train_df['interaction4'] = train_df.groupby(['userID','testId'])[['interaction3']].shift()['interaction3']
-        test_df['interaction4'] = test_df.groupby(['userID','testId'])[['interaction3']].shift()['interaction3']
-
-        merged_df = pd.concat([train_df, test_df[test_df['answerCode'] != -1]])
-
-        merged_df['testId_large'] = merged_df['testId'].apply(lambda s: s[2])
-        test_df['testId_large'] = test_df['testId'].apply(lambda s: s[2])
-
-        def categorize(x):
-            if  x <= 0.1:
-                return 0
-            elif 0.1 < x <= 0.2:
-                return 1
-            elif 0.2 < x <= 0.3:
-                return 2
-            elif 0.3 < x <= 0.4:
-                return 3
-            elif 0.4 < x <= 0.5:
-                return 4
-            elif 0.5 < x <= 0.6:
-                return 5
-            elif 0.6 < x <= 0.7:
-                return 6
-            elif 0.7 < x <= 0.8:
-                return 7
-            elif 0.8 < x <= 0.9:
-                return 8
-            else:
-                return 9
-
-
-        merged_assessment_rates = merged_df.groupby('assessmentItemID')['answerCode'].mean()
-
-        merged_df['assessment_rate'] = merged_df['assessmentItemID'].map(merged_assessment_rates.map(categorize))
-        test_df['assessment_rate'] = test_df['assessmentItemID'].map(merged_assessment_rates.map(categorize))
-
-
-        merged_user_rate = merged_df.groupby('userID')['answerCode'].mean()
-        test_user_rate = test_df.groupby('userID')['answerCode'].mean()
-
-        merged_df['user_rate'] = merged_df['userID'].map(merged_user_rate.map(categorize))
-        test_df['user_rate'] = test_df['userID'].map(test_user_rate.map(categorize))
-        
-
-
-        merged_df['Timestamp'] = pd.to_datetime(merged_df['Timestamp'])
-        merged_df['elapse'] = merged_df.groupby(['userID'])['Timestamp'].diff(1).shift(-1)
-        merged_df.loc[merged_df['testId'] != merged_df['testId'].shift(-1), 'elapse'] = pd.NaT
-        merged_df['elapse'] = merged_df['elapse'].dt.seconds
-        merged_df.loc[(merged_df['elapse'] > 600) | (merged_df['elapse'] < 2), 'elapse'] = np.nan
-        merged_df['elapse'].fillna(0)
-
-        test_df['Timestamp'] = pd.to_datetime(test_df['Timestamp'])
-        test_df['elapse'] = test_df.groupby(['userID'])['Timestamp'].diff(1).shift(-1)
-        test_df.loc[test_df['testId'] != test_df['testId'].shift(-1), 'elapse'] = pd.NaT
-        test_df['elapse'] = test_df['elapse'].dt.seconds
-        test_df.loc[(test_df['elapse'] > 600) | (test_df['elapse'] < 2), 'elapse'] = np.nan
-        test_df['elapse'].fillna(0)
-
-
-        # 카테고리 컬럼 끝 _c 붙여주세요.
-        merged_df = merged_df.rename(columns=
-            {
-                'assessmentItemID': 'assessmentItemID_c', # 기본 1
-                'testId': 'testId_c', # 기본 2
-                'KnowledgeTag': 'KnowledgeTag_c', # 기본 3
-                'interaction1' : 'interaction1_c',
-                'interaction2' : 'interaction2_c',
-                'interaction3' : 'interaction3_c',
-                'interaction4' : 'interaction4_c',
-                'testId_large' : 'testId_large_c',
-                # 'test_rate' : 'test_rate_c',
-                'assessment_rate' : 'assessment_rate_c',
-                'user_rate' : 'user_rate_c',
-                # 'train_know_rates': 'train_know_rates_c',
-            }
-        )
-        test_df = test_df.rename(columns=
-            {
-                'assessmentItemID' : 'assessmentItemID_c', # 기본 1
-                'testId' : 'testId_c', # 기본 2
-                'KnowledgeTag' : 'KnowledgeTag_c', # 기본 3
-                'interaction1' : 'interaction1_c',
-                'interaction2' : 'interaction2_c',
-                'interaction3' : 'interaction3_c',
-                'interaction4' : 'interaction4_c',
-                'testId_large' : 'testId_large_c',
-                # 'test_rate' : 'test_rate_c',
-                'assessment_rate' : 'assessment_rate_c',
-                'user_rate' : 'user_rate_c',
-                # 'train_know_rates': 'train_know_rates_c',
-            }
-        )
-        return test_df[test_df['answerCode'] != -1], test_df
-
-
 def main():
     if not os.path.exists(BASE_DATA_PATH):
         os.mkdir(BASE_DATA_PATH)
@@ -2465,17 +1644,8 @@ def main():
     # FE07(BASE_DATA_PATH, base_train_df, base_test_df).run()
     # FE08(BASE_DATA_PATH, base_train_df, base_test_df).run()
     # FE09(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE10(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE11(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE12(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE13(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE15(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE16(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE17(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE18(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE19(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE20(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    # FE21(BASE_DATA_PATH, base_train_df, base_test_df).run()
-    FE22(BASE_DATA_PATH, base_train_df, base_test_df).run()
+    FE10(BASE_DATA_PATH, base_train_df, base_test_df).run()
+
+
 if __name__=='__main__':
     main()
