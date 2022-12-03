@@ -83,7 +83,7 @@ def train(
         {"model": model.state_dict(), "epoch": e + 1},
         os.path.join(weight, f"last_model.pt"),
     )
-    logger.info(f"Best Weight Confirmed : {best_epoch+1}'th epoch")
+    logger.info(f"Best Weight Confirmed : best AUC = {best_auc:.03f} in {best_epoch+1}'th epoch")
 
 
 def inference(model, data, logger=None):
