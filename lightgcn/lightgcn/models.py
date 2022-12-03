@@ -62,17 +62,17 @@ def train(
             acc = accuracy_score(valid_data["label"], prob > 0.5)
             auc = roc_auc_score(valid_data["label"], prob)
             logger.info(
-                f" * In epoch {(e+1):04}, loss={loss:.03f}, acc={acc:.03f}, AUC={auc:.03f}"
+                f" * In epoch {(e+1):04}, train_loss={loss:.03f}, valid_acc={acc:.03f}, valid_AUC={auc:.03f}"
             )
             if use_wandb:
                 import wandb
 
-                wandb.log(dict(loss=loss, acc=acc, auc=auc))
+                wandb.log(dict(train_loss=loss, valid_acc=acc, valid_auc=auc))
 
         if weight:
             if auc > best_auc:
                 logger.info(
-                    f" * In epoch {(e+1):04}, loss={loss:.03f}, acc={acc:.03f}, AUC={auc:.03f}, Best AUC"
+                    f" * In epoch {(e+1):04}, train_loss={loss:.03f}, valid_acc={acc:.03f}, valid_AUC={auc:.03f}, Best AUC"
                 )
                 best_auc, best_epoch = auc, e
                 torch.save(

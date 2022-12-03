@@ -10,6 +10,8 @@ class CFG:
     basepath = "/opt/ml/level2_dkt_recsys-level2-recsys-11/data/"
     loader_verbose = True
 
+    fe_num = '00'
+
     # dump
     output_dir = "./output/"
     pred_file = "submission.csv"

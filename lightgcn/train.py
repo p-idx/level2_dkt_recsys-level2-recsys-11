@@ -9,6 +9,7 @@ if CFG.user_wandb:
     import wandb
 
     wandb.init(**CFG.wandb_kwargs, config=class2dict(CFG))
+    wandb.run.name = '(run name)'
 
 
 logger = get_logger(logging_conf)
@@ -21,8 +22,8 @@ def main():
     logger.info("Task Started")
 
     logger.info("[1/1] Data Preparing - Start")
-    train_data, test_data, n_node = prepare_dataset(
-        device, CFG.basepath, verbose=CFG.loader_verbose, logger=logger.getChild("data")
+    train_data, valid_data, test_data, n_node = prepare_dataset(
+        device, CFG.basepath, CFG.fe_num, verbose=CFG.loader_verbose, logger=logger.getChild("data")
     )
     logger.info("[1/1] Data Preparing - Done")
 
@@ -46,6 +47,7 @@ def main():
     train(
         model,
         train_data,
+        valid_data,
         n_epoch=CFG.n_epoch,
         learning_rate=CFG.learning_rate,
         use_wandb=CFG.user_wandb,
