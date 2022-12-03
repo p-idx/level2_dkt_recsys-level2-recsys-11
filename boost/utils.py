@@ -15,10 +15,6 @@ def setSeeds(seed=42):
 
 def transform_proba(pred:list):
     return list(zip(*pred))[1]
-    output = []
-    for zero, one in pred:
-        output.append(one)
-    return output
 
 
 def save_prediction(predicts: list, args: dict, k=0):

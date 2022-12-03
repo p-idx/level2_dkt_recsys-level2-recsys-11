@@ -13,6 +13,11 @@ def get_data(args):
     train_data = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'train_data.csv'))    # train + test(not -1)
     test_data = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'test_data.csv'))    # test
     
+    if 'drop_features' in args:
+        if args.drop_features != []:
+            train_data = train_data.drop(args.drop_features, axis=1)
+            test_data = test_data.drop(args.drop_features, axis=1)
+    
     cate_cols = [col for col in train_data.columns if col[-2:]== '_c']
 
     test = test_data[test_data.answerCode == -1]   # test last sequnece
@@ -24,18 +29,19 @@ def get_data(args):
 
 
 # 데이터 스플릿 함수
-def data_split(train_data, args):
+def data_split(train_data, test_data, args):
     if args.valid_exp:
-        test_data = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'test_data.csv'))    # test
-        test_data = test_data.query('answerCode != -1')
+        test_user = test_data['userID'].unique()
+        valid = train_data.query('userID in @test_user').groupby('userID').tail(args.valid_exp_n)
         
-        valid = test_data.groupby('userID').tail(args.valid_exp_n)
+        print(f'train.shape = {train_data.shape}')
+        print(f'ideal.shape = {len(train_data) - len(valid)}')
         print(f'valid.shape = {valid.shape}, valid.n_users = {valid.userID.nunique()}')
         train = train_data.drop(index = valid.index)
-        
+        print(f'after train.shape = {train.shape}')
         X_train = train.drop('answerCode', axis=1)
         X_valid = valid.drop('answerCode', axis=1)
-        
+
         y_train = train['answerCode']
         y_valid = valid['answerCode']
 
