@@ -23,6 +23,10 @@ import lightgbm as lgb
 def main(args):
     args.time_info = (datetime.datetime.today() + datetime.timedelta(hours=9)).strftime('%m%d_%H%M')
     setSeeds(args.seed)
+    # args.drop_features = [
+    #                     'assessmentItemID_c', 'testId_c',
+    #                     'interaction_4_c'
+    #                     ]
 
     print('------------------------load data------------------------')
     cate_cols, train_data, test_data = get_data(args)
@@ -53,7 +57,7 @@ def main(args):
                fold_count=args.FOLD_NUM,
                return_models=True
                )
-        print('log to wandb')
+        
         log_wandb(args)
 
         outputs = []
@@ -71,25 +75,14 @@ def main(args):
         save_prediction(predicts, args)
 
     else:
-
-        # test -1 마지막 정답여부 기록 + 
-        # train_data = pd.read_csv('/opt/ml/data/FE08/exp_train_data.csv')
-        # valid_data = pd.read_csv('/opt/ml/data/FE08/exp_valid_data.csv')
+        X_train, X_valid, y_train, y_valid = data_split(train_data, test_data, args)
         
-        # X_train = train_data.drop('answerCode', axis=1)
-        # y_train = train_data['answerCode']
-        # X_valid = valid_data.drop('answerCode', axis=1)
-        # y_valid = valid_data['answerCode']
-        
-        # print(X_train.shape, X_valid.shape)
-        X_train, X_valid, y_train, y_valid = data_split(train_data, args.ratio)
-        args.LOSS_FUNCTION = 'Logloss'
         model = get_model(args)
         if args.model == 'CATB':
             model.fit(X_train, y_train,
                 eval_set=(X_valid, y_valid),
                 cat_features=['userID'] + cate_cols,
-                # early_stopping_rounds= 50,
+                early_stopping_rounds= 50,
                 use_best_model=True,
                 )
         elif args.model == 'LGB':
@@ -100,11 +93,7 @@ def main(args):
                 )
         
         predicts = model.predict_proba(test_data)
-        print(predicts.shape)
-        output = []
-        for zero, one in predicts:
-            output.append(one)
-        predicts = output
+        predicts = transform_proba(predicts)
 
         feature_importance = model.feature_importances_
         sorted_idx = np.argsort(feature_importance)
@@ -116,7 +105,7 @@ def main(args):
         plt.yticks(range(len(sorted_idx)), np.array(test_data.columns)[sorted_idx])
         plt.title('Feature Importance')
         plt.show()
-        plt.savefig('Test.pdf')
+        plt.savefig(f'{args.time_info}feature_importance.png')
 
         # SAVE
         save_prediction(predicts, args)
