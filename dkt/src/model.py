@@ -74,6 +74,23 @@ class GRU(nn.Module):
         return out.squeeze(-1)
 
 
+class SelfAttention(nn.Module):
+    def __init__(self, args):
+        super().__init__()
+        self.args = args
+        # entire embedding
+        self.embedding_layer = EntireEmbedding(args)
+
+
+    def forward(self, cate_x: torch.Tensor, cont_x: torch.Tensor, mask: torch.Tensor, targets):
+        # embedding
+        comb_proj_x = self.embedding_layer(cate_x, cont_x)
+
+
+    
+
+
+
 # class GRUEncoder(nn.Module):
 #     def __init__(self, args):
 #         super().__init__()
