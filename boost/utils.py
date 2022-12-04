@@ -59,7 +59,7 @@ def log_wandb(args):
 
                 wandb.finish()
         else:
-            wandb.init(entity='mkdir', project='ksh_boost', name=f'{args.model}_{args.fe_num}_{args.time_info}')
+            wandb.init(entity='mkdir', project=f'kdg_{args.model}', name=f'{args.model}_{args.fe_num}_{args.time_info}')
             wandb.config.update(args)
             wandb.define_metric("iter")
             wandb.define_metric(f"{args.LOSS_FUNCTION}", step_metric="iter")

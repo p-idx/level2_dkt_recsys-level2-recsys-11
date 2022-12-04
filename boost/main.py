@@ -11,6 +11,7 @@ import numpy as np
 
 import matplotlib.pyplot as plt
 
+from wandb.lightgbm import wandb_callback, log_summary
 
 import lightgbm as lgb
 
@@ -57,7 +58,7 @@ def main(args):
                fold_count=args.FOLD_NUM,
                return_models=True
                )
-        
+
         log_wandb(args)
 
         outputs = []
@@ -67,16 +68,16 @@ def main(args):
             output = transform_proba(pred)
             save_prediction(output, args, k=fold)
             outputs.append(output)
-            
+
         # Simple average ensemble
         predicts = np.mean(outputs, axis=0)
-        
+
         print('------------------------save prediction------------------------')
         save_prediction(predicts, args)
 
     else:
         X_train, X_valid, y_train, y_valid = data_split(train_data, test_data, args)
-        
+
         model = get_model(args)
         if args.model == 'CATB':
             model.fit(X_train, y_train,
@@ -86,12 +87,22 @@ def main(args):
                 use_best_model=True,
                 )
         elif args.model == 'LGB':
+            wandb.init(entity='mkdir',
+                        project=f'kdg_{args.model}',
+                        name=f'{args.model}_{args.fe_num}_{args.time_info}',
+                        config=args,
+                        )
+            X_train[cate_cols] = X_train[cate_cols].astype('category')
+            X_valid[cate_cols] = X_valid[cate_cols].astype('category')
+            test_data[cate_cols] = test_data[cate_cols].astype('category')
             model.fit(X_train, y_train,
                 eval_set=(X_valid, y_valid),
                 early_stopping_rounds= 50,
                 verbose= 50,
+                callbacks=[wandb_callback()],
+                categorical_feature=cate_cols,
                 )
-        
+
         predicts = model.predict_proba(test_data)
         predicts = transform_proba(predicts)
 
@@ -105,11 +116,11 @@ def main(args):
         plt.yticks(range(len(sorted_idx)), np.array(test_data.columns)[sorted_idx])
         plt.title('Feature Importance')
         plt.show()
-        plt.savefig(f'{args.time_info}feature_importance.png')
+        plt.savefig(f'png/{args.time_info}feature_importance.png')
 
         # SAVE
         save_prediction(predicts, args)
-        
+
         log_wandb(args)
 
 

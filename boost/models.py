@@ -12,13 +12,14 @@ def get_model(args):
 
     if model_name == 'LGB':
         param = {'objective': 'binary',
-                    'metric': ['auc', 'binary_logloss'],
-                    'boosting_type': 'gbdt', # gbdt, dart, rf, goss
-                    'learning_rate': args.lr,
-                    'max_depth': 64,
-                    'num_leaves': 63,
-                    'n_estimators': args.n_epochs,
-                    }
+                'metric': ['auc', 'binary_logloss'],
+                'boosting_type': 'goss', # gbdt, dart, rf, goss
+                'learning_rate': args.lr,
+                'max_depth': args.lgb_depth,
+                'num_leaves': args.lgb_leaves,
+                'n_estimators': args.n_epochs,
+                'min_child_samples': args.lgb_child_samples,
+                }
         model = lgb.LGBMClassifier(**param) #need seed
 
     if model_name == 'CATB':
@@ -34,5 +35,5 @@ def get_model(args):
                                     # od_wait=args.od_wait,
                                     # task_type='GPU'
                                     )
-        
+
     return model
