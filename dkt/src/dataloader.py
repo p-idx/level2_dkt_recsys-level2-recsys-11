@@ -15,7 +15,7 @@ def load_data(args):
         num = train_df['userID'].nunique()
         print(f'this train is new!{num}')
     else:
-        train_df = pd.read_csv(os.path.join(args.data_dir, 'le_EDA_new_train_data.csv'))
+        train_df = pd.read_csv(os.path.join(args.data_dir, 'le_EDA_train_data.csv'))
         num = train_df['userID'].nunique()
         print(f'this train is basic!{num}')
     test_df = pd.read_csv(os.path.join(args.data_dir, 'le_EDA_test_data.csv'))
