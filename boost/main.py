@@ -75,12 +75,20 @@ def main(args):
         
         model = get_model(args)
         if args.model == 'CATB':
-            model.fit(X_train, y_train,
-                eval_set=(X_valid, y_valid),
-                cat_features=['userID'] + cate_cols,
-                early_stopping_rounds= 50,
-                use_best_model=True,
-                )
+            if args.od_type == 'Iter':
+                model.fit(X_train, y_train,
+                    eval_set=(X_valid, y_valid),
+                    cat_features=['userID'] + cate_cols,
+                    early_stopping_rounds = 100,
+                    use_best_model=True,
+                    )
+            else:
+                model.fit(X_train, y_train,
+                    eval_set=(X_valid, y_valid),
+                    cat_features=['userID'] + cate_cols,
+                    use_best_model=True,
+                    )
+
         elif args.model == 'LGB':
             model.fit(X_train, y_train,
                 eval_set=(X_valid, y_valid),

@@ -3,6 +3,7 @@ import os
 import pandas as pd
 from sklearn.model_selection import train_test_split
 import catboost as ctb
+from sklearn.utils import shuffle
 
 import numpy as np
 
@@ -27,25 +28,26 @@ def get_data(args):
 
 
 # 데이터 스플릿 함수
-def data_split(train_data,  args):
+def data_split(train_data, args):
     if args.valid_exp:
         test_data = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'test_data.csv'))    # test
         test_data = test_data.query('answerCode != -1')
         # test_data = test_data.drop(['interaction_c'], axis=1)
+        if args.is_new:
+            total = train_data.groupby('userID').tail(args.valid_exp_n)
+            train, valid = train_test_split(total, test_size=0.2)
+        else:
+            valid = train_data.groupby('userID').tail(args.valid_exp_n)
+            train = train_data.drop(index = valid.index)
 
-        valid = train_data.groupby('userID').tail(args.valid_exp_n)
         print(f'valid.shape = {valid.shape}, valid.n_users = {valid.userID.nunique()}')
-        train = train_data.drop(index = valid.index)
-        
         # 기존
         # test_user = test_data['userID'].unique()
         # valid = train_data.query('userID in @test_user').groupby('userID').tail(args.valid_exp_n)
         # train = train_data.drop(index = valid.index)
-     
         print(f'train.shape = {train_data.shape}')
         print(f'ideal.shape = {len(train_data) - len(valid)}')
         print(f'valid.shape = {valid.shape}, valid.n_users = {valid.userID.nunique()}')
-
         print(f'after train.shape = {train.shape}')
         X_train = train.drop('answerCode', axis=1)
         X_valid = valid.drop('answerCode', axis=1)
