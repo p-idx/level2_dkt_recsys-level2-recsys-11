@@ -23,10 +23,13 @@ import lightgbm as lgb
 def main(args):
     args.time_info = (datetime.datetime.today() + datetime.timedelta(hours=9)).strftime('%m%d_%H%M')
     setSeeds(args.seed)
-    # args.drop_features = [
-    #                     'assessmentItemID_c', 'testId_c',
-    #                     'interaction_4_c'
-    #                     ]
+    
+    
+    args.drop_features = [
+                        'assessmentItemID_c', 
+                        # 'testId_c',
+                        # 'interaction_4_c'
+                        ]
 
     print('------------------------load data------------------------')
     cate_cols, train_data, test_data = get_data(args)
@@ -75,8 +78,9 @@ def main(args):
         save_prediction(predicts, args)
 
     else:
-        X_train, X_valid, y_train, y_valid = data_split(train_data, test_data, args)
-        
+        X_train, X_valid, y_train, y_valid = data_split(train_data, args)
+        test_data = test_data.drop('testId_c', axis=1)
+        cate_cols.remove('testId_c')
         model = get_model(args)
         if args.model == 'CATB':
             model.fit(X_train, y_train,

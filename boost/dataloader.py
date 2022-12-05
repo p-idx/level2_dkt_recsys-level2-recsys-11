@@ -12,7 +12,7 @@ import numpy as np
 def get_data(args):
     train_data = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'train_data.csv'))    # train + test(not -1)
     test_data = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'test_data.csv'))    # test
-    
+    train_data = train_data.drop_duplicates() # FE 하고 나면 중복값들이 생김
     if 'drop_features' in args:
         if args.drop_features != []:
             train_data = train_data.drop(args.drop_features, axis=1)
@@ -29,15 +29,31 @@ def get_data(args):
 
 
 # 데이터 스플릿 함수
-def data_split(train_data, test_data, args):
+def data_split(train_data,  args):
     if args.valid_exp:
-        test_user = test_data['userID'].unique()
-        valid = train_data.query('userID in @test_user').groupby('userID').tail(args.valid_exp_n)
+        test_data = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'test_data.csv'))    # test
+        test_data = test_data.drop(args.drop_features, axis=1)
+        
+        # testid와 knowledgetag를 동일하게 맞춘 valid set
+        # last_data = test_data.groupby(['userID']).tail(13)
+        # valid = last_data[last_data.duplicated(['userID','testId_c', 'KnowledgeTag_c'])].groupby('userID').tail(2).query('answerCode != -1')
+        # valid = valid.drop_duplicates()
+        # train = pd.concat([train_data, valid], axis=0).drop_duplicates(keep=False)
+        # train = train.drop('testId_c', axis=1)
+        # valid = valid.drop('testId_c', axis=1)   
+        
+        
+        # 기존
+        # test_user = test_data['userID'].unique()
+        # valid = train_data.query('userID in @test_user').groupby('userID').tail(args.valid_exp_n)
+        # train = train_data.drop(index = valid.index)
+     
+   
         
         print(f'train.shape = {train_data.shape}')
         print(f'ideal.shape = {len(train_data) - len(valid)}')
         print(f'valid.shape = {valid.shape}, valid.n_users = {valid.userID.nunique()}')
-        train = train_data.drop(index = valid.index)
+
         print(f'after train.shape = {train.shape}')
         X_train = train.drop('answerCode', axis=1)
         X_valid = valid.drop('answerCode', axis=1)
