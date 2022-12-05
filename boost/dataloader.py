@@ -15,9 +15,7 @@ def get_data(args):
     # train_data = train_data.drop(['interaction_c'], axis=1)
     # test_data = test_data.drop(['interaction_c'], axis=1)
     # train_data 중복 제거
-    train_data.drop_duplicates(
-        subset=["userID", "assessmentItemID"], keep="last", inplace=True
-    )
+    
     cate_cols = [col for col in train_data.columns if col[-2:]== '_c']
 
     test = test_data[test_data.answerCode == -1]   # test last sequnece
@@ -73,3 +71,9 @@ def data_split(train_data,  args):
 # ideal.shape = 2518514
 # valid.shape = (7442, 13), valid.n_users = 7442
 # after train.shape = (2518514, 13)
+
+# valid.shape = (7442, 16), valid.n_users = 7442
+# train.shape = (2475974, 16)
+# ideal.shape = 2468532
+# valid.shape = (7442, 16), valid.n_users = 7442
+# after train.shape = (2468532, 16)
