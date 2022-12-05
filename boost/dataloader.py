@@ -14,6 +14,10 @@ def get_data(args):
     test_data = pd.read_csv(os.path.join(args.data_dir, f'FE{args.fe_num}', 'test_data.csv'))    # test
     # train_data = train_data.drop(['interaction_c'], axis=1)
     # test_data = test_data.drop(['interaction_c'], axis=1)
+    # train_data 중복 제거
+    train_data.drop_duplicates(
+        subset=["userID", "assessmentItemID"], keep="last", inplace=True
+    )
     cate_cols = [col for col in train_data.columns if col[-2:]== '_c']
 
     test = test_data[test_data.answerCode == -1]   # test last sequnece
@@ -31,7 +35,7 @@ def data_split(train_data,  args):
         test_data = test_data.query('answerCode != -1')
         # test_data = test_data.drop(['interaction_c'], axis=1)
 
-        valid = test_data.groupby('userID').tail(args.valid_exp_n)
+        valid = train_data.groupby('userID').tail(args.valid_exp_n)
         print(f'valid.shape = {valid.shape}, valid.n_users = {valid.userID.nunique()}')
         train = train_data.drop(index = valid.index)
         
@@ -63,3 +67,9 @@ def data_split(train_data,  args):
         )
     
     return X_train, X_valid, y_train, y_valid
+
+# valid.shape = (7442, 13), valid.n_users = 7442
+# train.shape = (2525956, 13)
+# ideal.shape = 2518514
+# valid.shape = (7442, 13), valid.n_users = 7442
+# after train.shape = (2518514, 13)
