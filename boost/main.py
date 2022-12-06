@@ -1,15 +1,15 @@
-from args import parse_args
-from dataloader import get_data, data_split
-from models import get_model
-from utils import setSeeds, transform_proba, save_prediction, log_wandb
 import catboost as ctb
 import os
 import datetime
 import wandb
 import pandas as pd
 import numpy as np
-
 import matplotlib.pyplot as plt
+from args import parse_args
+from dataloader import get_data, data_split, option1_train_test_split
+from models import get_model
+from utils import setSeeds, transform_proba, save_prediction, log_wandb
+from sklearn.metrics import accuracy_score, roc_auc_score
 
 
 import lightgbm as lgb
@@ -25,7 +25,7 @@ def main(args):
     setSeeds(args.seed)
 
     print('------------------------load data------------------------')
-    cate_cols, train_data, test_data = get_data(args)
+    cate_cols, train_data, test_data, sub_test_data = get_data(args)
 
     print('check by cv in catboost:',args.cat_cv)
     if args.cat_cv:
@@ -71,7 +71,7 @@ def main(args):
         save_prediction(predicts, args)
 
     else:
-        X_train, X_valid, y_train, y_valid = data_split(train_data, args)
+        X_train, X_valid, y_train, y_valid = option1_train_test_split(train_data, args)
         
         model = get_model(args)
         if args.model == 'CATB':
@@ -97,6 +97,13 @@ def main(args):
         
         predicts = model.predict_proba(test_data)
         predicts = transform_proba(predicts)
+
+        sub_y = sub_test_data['answerCode']
+        sub_test_data = sub_test_data.drop(['answerCode'], axis=1)
+        sub_preds = model.predict_proba(sub_test_data)[:, 1]
+        sub_acc = accuracy_score(sub_y, np.where(sub_preds >= 0.5, 1, 0))
+        sub_auc = roc_auc_score(sub_y, sub_preds)
+        print(f"VALID AUC : {sub_auc} ACC : {sub_acc}\n")
 
         feature_importance = model.feature_importances_
         sorted_idx = np.argsort(feature_importance)

@@ -23,11 +23,12 @@ def get_model(args):
     if model_name == 'CATB':
         if args.od_type == 'Iter':
             model = ctb.CatBoostClassifier(
-                            eval_metric ='AUC',
+                            custom_metric=['AUC','Accuracy'],
+                            # eval_metric ='AUC',
                             iterations=args.n_epochs,
                             depth=args.depth,
-                            # learning_rate=args.lr,
-                            # verbose=args.verbose,
+                            learning_rate=args.lr,
+                            verbose=args.verbose,
                             loss_function=args.LOSS_FUNCTION, #사용자 지정 로스도 가능한 모양
                             l2_leaf_reg = args.l2_leaf_reg,
                             od_type=args.od_type,
@@ -37,18 +38,19 @@ def get_model(args):
 
         else:
             model = ctb.CatBoostClassifier(
-                                        eval_metric ='AUC',
-                                        iterations=args.n_epochs,
-                                        depth=args.depth,
-                                        # learning_rate=args.lr,
-                                        # verbose=args.verbose,
-                                        loss_function=args.LOSS_FUNCTION, #사용자 지정 로스도 가능한 모양
-                                        l2_leaf_reg = args.l2_leaf_reg,
-                                        od_type=args.od_type,
-                                        od_pval=0.05,
-                                        od_wait=10,
-                                        grow_policy=args.grow_policy,
-                                        task_type='GPU'
-                                        )
+                            custom_metric=['AUC','Accuracy'],
+                            # eval_metric ='AUC',
+                            iterations=args.n_epochs,
+                            depth=args.depth,
+                            learning_rate=args.lr,
+                            # verbose=args.verbose,
+                            loss_function=args.LOSS_FUNCTION, #사용자 지정 로스도 가능한 모양
+                            l2_leaf_reg = args.l2_leaf_reg,
+                            od_type=args.od_type,
+                            od_pval=0.05,
+                            od_wait=50,
+                            grow_policy=args.grow_policy,
+                            task_type='GPU'
+                            )
         
     return model
