@@ -90,7 +90,7 @@ def main(args):
         direction = 'maximize',
         sampler = sampler,
     )
-    study.optimize(objective, n_trials=3)
+    study.optimize(objective, n_trials=50)
     print('=='*50)
     print(study.best_params)
     print('=='*50)
@@ -101,6 +101,7 @@ def main(args):
     model = ctb.CatBoostClassifier(**study.best_params, task_type='GPU', random_state=args.seed, objective='Logloss',
                                  cat_features=['userID'] + cate_cols)
 
+    ### 5 fold start ###
     user_ids = option1_5fold_train_test_split(train_data)
     outputs = []
     for i,user_id in enumerate(user_ids):
@@ -114,8 +115,10 @@ def main(args):
         X_valid = valid.drop('answerCode', axis=1)
         y_train = train['answerCode']
         y_valid = valid['answerCode']
-    
 
+        # 여기서 모델을 다시 선언해야 하나?
+        model = ctb.CatBoostClassifier(**study.best_params, task_type='GPU', random_state=args.seed, objective='Logloss',
+                                    cat_features=['userID'] + cate_cols)
         model.fit(X_train, y_train, eval_set=[(X_valid, y_valid)], verbose=50)
 
         # sub inference (성능 확인차)
