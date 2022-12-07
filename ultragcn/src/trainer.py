@@ -6,31 +6,36 @@ from sklearn.metrics import accuracy_score, roc_auc_score
 
 # Negative Sampling
 def Sampling(pos_train_data, item_num, neg_ratio, pos_edges, neg_edges, sampling_sift_pos):
-	neg_candidates = np.arange(item_num)
+    neg_candidates = np.arange(item_num)
 
-	if sampling_sift_pos:
-		neg_items = []
-		for u in pos_train_data[0]:
-			probs = np.ones(item_num)
-			probs[pos_edges[u]] = 0
-            probs /= np.sum(probs)
+    if sampling_sift_pos:
+        neg_items = []
+        for idx, u in enumerate(pos_train_data[0]):
 
-            u_neg_items = list(neg_edges[u])
-            length = neg_ratio - len(neg_edges[u])
+            length = neg_ratio - len(neg_edges[u])  
 
-			random_negs = np.random.choice(neg_candidates, size = length, p = probs, replace = True).reshape(1, -1)
-            u_neg_items.extend(random_negs)
-            
-			neg_items.append(u_neg_items)
+            if length > 0:
+                probs = np.ones(item_num)
+                probs[pos_edges[u]] = 0
+                probs /= np.sum(probs)
 
-		neg_items = np.concatenate(neg_items, axis = 0) 
+                u_neg_items = np.array(neg_edges[u]).reshape(1,-1)
+                random_negs = np.random.choice(neg_candidates, size = length, p = probs, replace = True).reshape(1, -1)
+                u_neg_items = np.concatenate([u_neg_items, random_negs], axis=1)
+
+            else:
+                u_neg_items = u_neg_items = np.random.choice(neg_edges[u], size = neg_ratio, replace = True).reshape(1,-1)
+
+            neg_items.append(u_neg_items)
+
+        neg_items = np.concatenate(neg_items, axis = 0) 
     
-	else:
-		neg_items = np.random.choice(neg_candidates, (len(pos_train_data[0]), neg_ratio), replace = True)
+    else:
+        neg_items = np.random.choice(neg_candidates, (len(pos_train_data[0]), neg_ratio), replace = True)
 	
-	neg_items = torch.from_numpy(neg_items)
+    neg_items = torch.from_numpy(neg_items)
 	
-	return pos_train_data[0], pos_train_data[1], neg_items	# users, pos_items, neg_items
+    return pos_train_data[0], pos_train_data[1], neg_items	# users, pos_items, neg_items
 
 
 ########################### TRAINING #####################################
@@ -39,15 +44,14 @@ def train(
     model, 
     optimizer, 
     train_loader, 
-    test_loader, 
-    mask,
-    test_ground_truth_list,
-    interacted_items, 
+    valid_loader, 
+    valid_label,
+    pos_edges, 
+    neg_edges, 
     params,
     device
 ): 
- 
-    best_epoch, best_recall, best_ndcg = 0, 0, 0
+    best_auc, best_epoch, curr_acc = 0, -1, 0
     early_stop_count = 0
     early_stop = False
 
@@ -64,8 +68,10 @@ def train(
         model.train() 
         start_time = time.time()
 
+
         for batch, x in enumerate(train_loader): # x: tensor:[users, pos_items]
-            users, pos_items, neg_items = Sampling(x, params['item_num'], params['negative_num'], interacted_items, params['sampling_sift_pos'])
+
+            users, pos_items, neg_items = Sampling(x, params['item_num'], params['negative_num'], pos_edges, neg_edges, params['sampling_sift_pos'])
             users = users.to(device)
             pos_items = pos_items.to(device)
             neg_items = neg_items.to(device)
@@ -84,20 +90,20 @@ def train(
         need_test = True
         if epoch < 50 and epoch % 5 != 0:
             need_test = False
-            
+
         if need_test:
             start_time = time.time()
-            F1_score, Precision, Recall, NDCG = test(model, test_loader, test_ground_truth_list, mask, params['topk'], params['user_num'])
+            acc, auc = link_test(model, valid_loader, valid_label)
             # if params['enable_tensorboard']:
             #     writer.add_scalar('Results/recall@20', Recall, epoch)
             #     writer.add_scalar('Results/ndcg@20', NDCG, epoch)
             test_time = time.strftime("%H: %M: %S", time.gmtime(time.time() - start_time))
             
             print('The time for epoch {} is: train time = {}, test time = {}'.format(epoch, train_time, test_time))
-            print("Loss = {:.5f}, F1-score: {:5f} \t Precision: {:.5f}\t Recall: {:.5f}\tNDCG: {:.5f}".format(loss.item(), F1_score, Precision, Recall, NDCG))
+            print("Valid_AUC = {:.5f}, Valid_ACC : {:5f}".format(loss.item(), auc, acc))
 
-            if Recall > best_recall:
-                best_recall, best_ndcg, best_epoch = Recall, NDCG, epoch
+            if auc > best_auc:
+                best_auc, best_epoch, curr_acc = auc, epoch, acc
                 early_stop_count = 0
                 torch.save(model.state_dict(), params['model_save_path'])
 
@@ -110,13 +116,13 @@ def train(
             print('##########################################')
             print('Early stop is triggered at {} epochs.'.format(epoch))
             print('Results:')
-            print('best epoch = {}, best recall = {}, best ndcg = {}'.format(best_epoch, best_recall, best_ndcg))
+            print('best epoch = {}, best auc = {}, acc = {}'.format(best_epoch, best_auc, curr_acc))
             print('The best model is saved at {}'.format(params['model_save_path']))
             break
 
     # writer.flush()
 
-    print('Training end!')
+    print('Training Done!')
 
 # The below 7 functions (hit, ndcg, RecallPrecision_ATk, MRRatK_r, NDCGatK_r, test_one_batch, getLabel) follow this license.
 # MIT License
@@ -261,3 +267,19 @@ def test(model, test_loader, test_ground_truth_list, mask, topk, n_user):
     F1_score = 2 * (Precision * Recall) / (Precision + Recall)
 
     return F1_score, Precision, Recall, NDCG
+
+
+def link_test(model, valid_loader, valid_label):
+    with torch.no_grad():
+        total_pred = []
+        for batches, x in enumerate(valid_loader):
+            pred = model.predict_link(x)
+            pred = pred.detach().cpu()
+            total_pred.extend(pred)
+
+        total_pred = np.array(total_pred)
+        acc = accuracy_score(valid_label, total_pred > 0.5)
+        auc = roc_auc_score(valid_label, pred)
+
+    return acc, auc
+

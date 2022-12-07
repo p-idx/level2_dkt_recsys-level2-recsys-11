@@ -7,25 +7,26 @@ import scipy.sparse as sp
 
 
 
-def prepare_dataset(params):
+def prepare_dataset(device, params):
     train_data, test_data = load_data(params['basepath'], params['fe_num'])
 
     # 전체 유저와 문제 인덱싱
     user2idx, item2idx, n_user, m_item = indexing_data(train_data, test_data)
+    params['user_num'] = n_user
+    params['item_num'] = m_item
 
     # train, valid, test split
     train_data, valid_data, test_data = separate_data(train_data, test_data)
 
     # edge, label, matrix 정의
-    pos_edges, neg_edges, train_edges, valid_edges, valid_label, test_edges, train_mat, constraint_mat = process_data(train_data, valid_data, test_data, user2idx, item2idx, n_user, m_item)
+    pos_edges, neg_edges, train_edges, valid_edges, valid_label, test_edges, train_mat, constraint_mat = process_data(train_data, valid_data, test_data, user2idx, item2idx, n_user, m_item, device)
 
     # Dataloader
-    batch_size = params['batch_sisze']
+    batch_size = params['batch_size']
     num_workers = params['num_workers']
     train_loader = data.DataLoader(train_edges, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    valid_loader = data.DataLoader(valid_edges, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-    test_loader = data.DataLoader(test_edges, batch_size=batch_size, shuffle=True, num_workers=num_workers)
-
+    valid_loader = data.DataLoader(valid_edges, batch_size=batch_size, shuffle=False, num_workers=num_workers)
+    test_loader = data.DataLoader(test_edges, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 
     # mask matrix for testing to accelerate testing speed
     # when doing topk 
@@ -44,7 +45,7 @@ def prepare_dataset(params):
     # Compute \Omega to extend UltraGCN to the item-item occurence graph
     ii_neighbor_mat, ii_constraint_mat = get_ii_constraint_mat(train_mat, params['ii_neighbor_num'])
  
-    return constraint_mat, ii_constraint_mat, ii_neighbor_mat, train_loader, valid_loader, pos_edges, neg_edges, valid_label
+    return constraint_mat, ii_constraint_mat, ii_neighbor_mat, train_loader, valid_loader, pos_edges, neg_edges, valid_label, params
 
 
 def load_data(basepath, fe_num):
@@ -85,7 +86,7 @@ def separate_data(train, test):
     return train, valid, test
 
 
-def process_data(train_data, valid_data, test_data, id_2_index, n_user, m_item):
+def process_data(train_data, valid_data, test_data, user2idx, item2idx, n_user, m_item, device):
     train_mat = sp.dok_matrix((n_user, m_item), dtype=np.float32) 
     train_edges = []; valid_edges = []; test_edges = []
     valid_label = []
@@ -95,7 +96,7 @@ def process_data(train_data, valid_data, test_data, id_2_index, n_user, m_item):
 
     # generate edges 
     for user, item, acode in zip(train_data.userID, train_data.assessmentItemID_c, train_data.answerCode):
-        uid, iid = id_2_index[user], id_2_index[str(item)]
+        uid, iid = user2idx[user], item2idx[str(item)]
         if acode == 1:
             pos_edges[uid].append(iid)
             train_mat[uid, iid] = 1.0
@@ -104,15 +105,15 @@ def process_data(train_data, valid_data, test_data, id_2_index, n_user, m_item):
         train_edges.append([uid, iid])
 
     for user, item, acode in zip(valid_data.userID, valid_data.assessmentItemID_c, valid_data.answerCode):
-        uid, iid = id_2_index[user], id_2_index[str(item)]
+        uid, iid = user2idx[user], item2idx[str(item)]
         valid_edges.append([uid, iid])
         valid_label.append(acode)
 
     for user, item, acode in zip(test_data.userID, test_data.assessmentItemID_c, test_data.answerCode):
-        uid, iid = id_2_index[user], id_2_index[str(item)]
+        uid, iid = user2idx[user], item2idx[str(item)]
         test_edges.append([uid, iid])
-    
 
+    
     # construct degree matrix for graphmf
     items_D = np.sum(train_mat, axis=0).reshape(-1)
     users_D = np.sum(train_mat, axis=1).reshape(-1)
@@ -137,6 +138,7 @@ def get_ii_constraint_mat(train_mat, num_neighbors, ii_diagonal_zero = False):
         A[range(n_items), range(n_items)] = 0
     items_D = np.sum(A, axis = 0).reshape(-1)
     users_D = np.sum(A, axis = 1).reshape(-1)
+    # users_D[users_D == 0] == 10 ** -15
 
     beta_uD = (np.sqrt(users_D + 1) / users_D).reshape(-1, 1)
     beta_iD = (1 / np.sqrt(items_D + 1)).reshape(1, -1)
@@ -147,7 +149,7 @@ def get_ii_constraint_mat(train_mat, num_neighbors, ii_diagonal_zero = False):
         res_mat[i] = row_idxs
         res_sim_mat[i] = row_sims
         if i % 15000 == 0:
-            print('i-i constraint matrix {} ok'.format(i))
-
-    print('Computation \\Omega OK!')
+            print('i-i constraint matrix {} done'.format(i))
+            
+    print('Computation \\Omega Done!')
     return res_mat.long(), res_sim_mat.float()

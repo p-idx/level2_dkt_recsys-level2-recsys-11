@@ -19,15 +19,15 @@ class CFG:
     ################
     ##### Training
 
-    train_file_path="/opt/ml/level2_dkt_recsys-level2-recsys-11/data/"
+    basepath="/opt/ml/level2_dkt_recsys-level2-recsys-11/data/"
     fe_num = '09'
 
     #need to specify the avaliable gpu index. If gpu is not avaliable, we will use cpu.
     gpu=1
     num_workers=1
 
-    learning_rate=1e-3
-    batch_size=1024
+    lr=1e-3
+    batch_size=512
     early_stop_epoch=50
 
     #L = -(w1 + w2*\beta)) * log(sigmoid(e_u e_i)) - \sum_{N-} (w3 + w4*\beta) * log(sigmoid(e_u e_i'))

@@ -21,8 +21,8 @@ class UltraGCN(nn.Module):
         self.w4 = params['w4']
 
         self.negative_weight = params['negative_weight']
-        self.gamma = params['gamma']
-        self.lambda_ = params['lambda']
+        self.gamma = params['GAMMA']
+        self.lambda_ = params['LAMBDA']
 
         self.user_embeds = nn.Embedding(self.user_num, self.embedding_dim)
         self.item_embeds = nn.Embedding(self.item_num, self.embedding_dim)
@@ -121,3 +121,26 @@ class UltraGCN(nn.Module):
 
     def get_device(self):
         return self.user_embeds.weight.device
+
+
+    def predict_link(self, edges):
+        device = self.get_device()
+        users = edges[0].to(device)
+        items = edges[1].to(device)
+
+        # version 1
+        user_embed = self.user_embeds(users)
+        item_embed = self.item_embeds(items)
+        out = (user_embed*item_embed).sum(dim=-1)
+
+        # version 2
+        pred = []
+        for u,i in zip(users,items):
+            user_embed2 = self.user_embeds(u)
+            item_embed2 = self.item_embeds(i)
+            
+            pred.append(user_embed2*item_embed2)
+
+        breakpoint()
+        # return (user_embed * item_embed).sum(dim=-1)
+        return pred
