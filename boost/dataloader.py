@@ -98,6 +98,44 @@ def option1_train_test_split(train_data, args):
     
     return X_train, X_valid, y_train, y_valid
 
+def option1_5fold_train_test_split(train_data):
+
+    users = list(zip(train_data["userID"].value_counts().index, train_data["userID"].value_counts()))
+    random.shuffle(users)
+
+    val_data_len = len(train_data)//5
+    sum_of_train_data = 0
+    user_ids1 = []
+    user_ids2 = []
+    user_ids3 = []
+    user_ids4 = []
+    user_ids5 = []
+
+    for user_id, count in users:
+        sum_of_train_data += count
+        if sum_of_train_data < val_data_len:
+            user_ids1.append(user_id)
+        elif sum_of_train_data < val_data_len*2:
+            user_ids2.append(user_id)
+        elif sum_of_train_data < val_data_len*3:
+            user_ids3.append(user_id)
+        elif sum_of_train_data < val_data_len*4:
+            user_ids4.append(user_id)
+        else:
+            user_ids5.append(user_id)   
+        
+    train = train_data[train_data["userID"].isin(user_ids1)]
+    valid = train_data[train_data["userID"].isin(user_ids1) == False]
+
+    # test데이터셋은 각 유저의 마지막 interaction만 추출
+    # test = test[test["userID"] != test["userID"].shift(-1)]
+    X_train = train.drop('answerCode', axis=1)
+    X_valid = valid.drop('answerCode', axis=1)
+    y_train = train['answerCode']
+    y_valid = valid['answerCode']
+
+    
+    return [user_ids1, user_ids2, user_ids3, user_ids4, user_ids5]
 
 # valid.shape = (7442, 13), valid.n_users = 7442
 # train.shape = (2525956, 13)

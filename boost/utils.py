@@ -17,12 +17,15 @@ def transform_proba(pred:list):
     return list(zip(*pred))[1]
 
 
-def save_prediction(predicts: list, args: dict, k=0):
+def save_prediction(predicts: list, args: dict, k=0, fold=False, M=False):
     output_dir = './output/'
-    if args.cat_cv:
+    if fold:
         write_path = os.path.join(output_dir, f"{args.model}_{args.fe_num}_{args.time_info}_FOLD{k}.csv")
     else:
-        write_path = os.path.join(output_dir, f"{args.model}_{args.fe_num}_{args.time_info}.csv")
+        if M:
+            write_path = os.path.join(output_dir, f"{args.model}_{args.fe_num}_{args.time_info}_M.csv")
+        else:
+            write_path = os.path.join(output_dir, f"{args.model}_{args.fe_num}_{args.time_info}.csv")
     
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
