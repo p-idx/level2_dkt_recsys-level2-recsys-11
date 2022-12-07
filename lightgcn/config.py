@@ -17,14 +17,14 @@ class CFG:
     pred_file = "submission.csv"
 
     # build
-    embedding_dim = 64  # int
-    num_layers = 1  # int (보통 5까지 늘리지만 4-10도 학습 가능) - 실험 요소
+    embedding_dim = 128  # int
+    num_layers = 3  # int (보통 5까지 늘리지만 4-10도 학습 가능) - 실험 요소
     alpha = None  # Optional[Union[float, Tensor]]
     build_kwargs = {}  # other arguments
     weight = "./weight/best_model.pt"
 
     # train
-    n_epoch = 1000
+    n_epoch = 2000
     learning_rate = 0.001
     weight_basepath = "./weight"
 

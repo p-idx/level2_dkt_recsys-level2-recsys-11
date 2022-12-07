@@ -21,10 +21,10 @@ def Sampling(pos_train_data, item_num, neg_ratio, pos_edges, neg_edges, sampling
 
                 u_neg_items = np.array(neg_edges[u]).reshape(1,-1)
                 random_negs = np.random.choice(neg_candidates, size = length, p = probs, replace = True).reshape(1, -1)
-                u_neg_items = np.concatenate([u_neg_items, random_negs], axis=1)
+                u_neg_items = np.concatenate([u_neg_items, random_negs], axis=None).reshape(1,-1)
 
             else:
-                u_neg_items = u_neg_items = np.random.choice(neg_edges[u], size = neg_ratio, replace = True).reshape(1,-1)
+                u_neg_items = np.random.choice(neg_edges[u], size = neg_ratio, replace = True).reshape(1,-1)
 
             neg_items.append(u_neg_items)
 
@@ -34,6 +34,7 @@ def Sampling(pos_train_data, item_num, neg_ratio, pos_edges, neg_edges, sampling
         neg_items = np.random.choice(neg_candidates, (len(pos_train_data[0]), neg_ratio), replace = True)
 	
     neg_items = torch.from_numpy(neg_items)
+    neg_items = neg_items.type(torch.int64)
 	
     return pos_train_data[0], pos_train_data[1], neg_items	# users, pos_items, neg_items
 
@@ -78,6 +79,11 @@ def train(
 
             model.zero_grad()
             loss = model(users, pos_items, neg_items)
+            train_loss = loss/params['batch_size']
+            if train_loss > 10**10:
+                breakpoint()
+
+            print(f'train_loss: {train_loss}')
             # if params['enable_tensorboard']:
             #     writer.add_scalar("Loss/train_batch", loss, batches * epoch + batch)
             loss.backward()
@@ -271,10 +277,15 @@ def test(model, test_loader, test_ground_truth_list, mask, topk, n_user):
 
 def link_test(model, valid_loader, valid_label):
     with torch.no_grad():
+        model.eval()
+        # ui_emb_mul = model.test_forward()
         total_pred = []
+
         for batches, x in enumerate(valid_loader):
-            pred = model.predict_link(x)
-            pred = pred.detach().cpu()
+            batch_users = x[0].to(model.get_device())
+            batch_items = x[1].to(model.get_device())
+            pred = model.pred_link(batch_users, batch_users)
+            pred = pred.detach().cpu().tolist()
             total_pred.extend(pred)
 
         total_pred = np.array(total_pred)

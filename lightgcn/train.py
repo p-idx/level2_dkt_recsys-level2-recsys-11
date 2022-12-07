@@ -9,7 +9,7 @@ if CFG.user_wandb:
     import wandb
 
     wandb.init(**CFG.wandb_kwargs, config=class2dict(CFG))
-    wandb.run.name = '(run name)'
+    wandb.run.name = f'tail=3, embedding={CFG.embedding_dim}, layers={CFG.num_layers}'
 
 
 logger = get_logger(logging_conf)

@@ -53,7 +53,7 @@ def separate_data(train, test):
     # train_data = data[data.answerCode >= 0]
     # test_data = data[data.answerCode < 0]
 
-    valid = train.groupby('userID').tail(1)
+    valid = train.groupby('userID').tail(3)
     train = train.drop(index=valid.index)
     valid = valid.reset_index(drop=True)
 

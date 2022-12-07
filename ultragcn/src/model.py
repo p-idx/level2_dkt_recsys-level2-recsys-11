@@ -106,8 +106,13 @@ class UltraGCN(nn.Module):
         omega_weight = self.get_omegas(users, pos_items, neg_items)
         
         loss = self.cal_loss_L(users, pos_items, neg_items, omega_weight)
+        print(loss)
         loss += self.gamma * self.norm_loss()
+        print(loss)
         loss += self.lambda_ * self.cal_loss_I(users, pos_items)
+        print(loss)
+        # if loss / 512 > 1:
+        #     breakpoint()
         return loss
 
 
@@ -144,3 +149,21 @@ class UltraGCN(nn.Module):
         breakpoint()
         # return (user_embed * item_embed).sum(dim=-1)
         return pred
+    
+
+    def pred_link(self, user, item):
+        user_embed = self.user_embeds(user)
+        item_embed = self.item_embeds(item)
+
+        breakpoint()
+        return torch.dot(user_embed, item_embed)
+
+
+    def test_forward(self):
+        device = self.get_device()
+        users = torch.arange(self.user_num).to(device)
+        items = torch.arange(self.item_num).to(device)
+        user_embeds = self.user_embeds(users)
+        item_embeds = self.item_embeds(items)
+         
+        return user_embeds.mm(item_embeds.t())
