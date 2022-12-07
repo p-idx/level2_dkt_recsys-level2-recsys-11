@@ -54,13 +54,13 @@ def main(args):
             'eval_metric' : 'AUC',
             "cat_features" : ['userID'] + cate_cols,
             'learning_rate' : trial.suggest_loguniform('learning_rate', 0.01, 0.1),
-            'bagging_temperature' :trial.suggest_loguniform('bagging_temperature', 0.01, 100.00),
+            # 'bagging_temperature' :trial.suggest_loguniform('bagging_temperature', 0.01, 100.00),
             "n_estimators":trial.suggest_int("n_estimators", 1000, 10000),
             "max_depth":trial.suggest_int("max_depth", 4, 12),
-            'random_strength' :trial.suggest_int('random_strength', 0, 100),
+            # 'random_strength' :trial.suggest_int('random_strength', 0, 100),
             "l2_leaf_reg":trial.suggest_float("l2_leaf_reg",0.1, 12),
-            "min_child_samples": trial.suggest_int("min_child_samples", 5, 100),
-            "max_bin": trial.suggest_int("max_bin", 200, 1000),
+            # "min_child_samples": trial.suggest_int("min_child_samples", 5, 100),
+            # "max_bin": trial.suggest_int("max_bin", 200, 1000),
             'od_type': trial.suggest_categorical('od_type', ['IncToDec']),
             'od_pval': trial.suggest_float('od_pval', 0.01, 0.05),
             'od_wait': trial.suggest_int('od_wait', 50, 100),
@@ -81,16 +81,18 @@ def main(args):
         sub_acc = accuracy_score(sub_y, np.where(sub_preds >= 0.5, 1, 0))
         sub_auc = roc_auc_score(sub_y, sub_preds)
         print(f"VALID AUC : {sub_auc} ACC : {sub_acc}\n")
-        
-        return sub_auc
-        
+        valid_preds = model.predict_proba(X_valid)[:, 1]
+        valid_auc = roc_auc_score(y_valid, valid_preds)
+        return valid_auc
+    
+    ##### optuna start #####
     sampler = optuna.samplers.TPESampler(seed=42)
     study = optuna.create_study(
         study_name = 'cat_parameter_opt',
         direction = 'maximize',
         sampler = sampler,
     )
-    study.optimize(objective, n_trials=50)
+    study.optimize(objective, n_trials=10)
     print('=='*50)
     print(study.best_params)
     print('=='*50)
@@ -98,7 +100,7 @@ def main(args):
     cate_cols, train_data, test_data, sub_test_data = get_data(args)
     sub_y = sub_test_data['answerCode']
     sub_test_data = sub_test_data.drop(['answerCode'], axis=1)
-    model = ctb.CatBoostClassifier(**study.best_params, task_type='GPU', random_state=args.seed, objective='Logloss',
+    model = ctb.CatBoostClassifier(**study.best_params, task_type='GPU', random_state=args.seed, loss_function='Logloss',
                                  cat_features=['userID'] + cate_cols)
 
     ### 5 fold start ###
@@ -117,7 +119,7 @@ def main(args):
         y_valid = valid['answerCode']
 
         # 여기서 모델을 다시 선언해야 하나?
-        model = ctb.CatBoostClassifier(**study.best_params, task_type='GPU', random_state=args.seed, objective='Logloss',
+        model = ctb.CatBoostClassifier(**study.best_params, task_type='GPU', random_state=args.seed, loss_function='Logloss',
                                     cat_features=['userID'] + cate_cols)
         model.fit(X_train, y_train, eval_set=[(X_valid, y_valid)], verbose=50)
 
@@ -125,8 +127,11 @@ def main(args):
         sub_preds = model.predict_proba(sub_test_data)[:, 1]
         sub_acc = accuracy_score(sub_y, np.where(sub_preds >= 0.5, 1, 0))
         sub_auc = roc_auc_score(sub_y, sub_preds)
-        print(f"VALID AUC : {sub_auc} ACC : {sub_acc}\n")
-
+        print(f"SUB_LB AUC : {sub_auc} ACC : {sub_acc}\n")
+        # valid_auc
+        valid_preds = model.predict_proba(X_valid)[:, 1]
+        valid_auc = roc_auc_score(y_valid, valid_preds)
+        print(f"VALID AUC : {valid_auc}\n")
         # real inference
         fold_predicts = model.predict_proba(test_data)
         fold_predicts = transform_proba(fold_predicts)
