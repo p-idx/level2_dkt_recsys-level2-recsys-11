@@ -56,7 +56,7 @@ def data_split(train_data, args):
         y_train = train['answerCode']
         y_valid = valid['answerCode']
 
-        
+
     else:
         X = train_data.drop(['answerCode'], axis=1)
         y = train_data['answerCode']
@@ -95,7 +95,7 @@ def option1_train_test_split(train_data, args):
     y_train = train['answerCode']
     y_valid = valid['answerCode']
 
-    
+
     return X_train, X_valid, y_train, y_valid
 
 def option1_5fold_train_test_split(train_data):
@@ -136,15 +136,3 @@ def option1_5fold_train_test_split(train_data):
 
     
     return [user_ids1, user_ids2, user_ids3, user_ids4, user_ids5]
-
-# valid.shape = (7442, 13), valid.n_users = 7442
-# train.shape = (2525956, 13)
-# ideal.shape = 2518514
-# valid.shape = (7442, 13), valid.n_users = 7442
-# after train.shape = (2518514, 13)
-
-# valid.shape = (7442, 16), valid.n_users = 7442
-# train.shape = (2475974, 16)
-# ideal.shape = 2468532
-# valid.shape = (7442, 16), valid.n_users = 7442
-# after train.shape = (2468532, 16)

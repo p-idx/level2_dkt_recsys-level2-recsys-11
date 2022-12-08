@@ -45,7 +45,7 @@ def log_wandb(args):
             del valid_metric['valid_iter']
             del valid_metric['train_iter']
             wandb.log(valid_metric)
-            
+
     if args.wandb:
         if args.cat_cv:
             for k in range(args.FOLD_NUM):
@@ -54,34 +54,34 @@ def log_wandb(args):
                 wandb.config.update(args)
                 wandb.define_metric("iter")
                 wandb.define_metric(f"{args.LOSS_FUNCTION}", step_metric="iter")
-                
+
                 valid_error = pd.read_csv(f'./catboost_info/fold-{k}/test_error.tsv', delimiter ='\t')
                 train_error = pd.read_csv(f'./catboost_info/fold-{k}/learn_error.tsv', delimiter ='\t')
-                
+
                 read_error_file(valid_error, train_error)
-                
+
                 wandb.finish()
         else:
-            wandb.init(entity='mkdir', project='sj_cat_test', name=f'{args.model}_{args.fe_num}_{args.time_info}')
+            wandb.init(entity='mkdir', project=f'kdg_{args.model}', name=f'{args.model}_{args.fe_num}_{args.time_info}')
             wandb.config.update(args)
             wandb.define_metric("iter")
             wandb.define_metric(f"{args.LOSS_FUNCTION}", step_metric="iter")
-            
-            
+
+
             valid_error = pd.read_csv('./catboost_info/test_error.tsv', delimiter ='\t')
             train_error = pd.read_csv('./catboost_info/learn_error.tsv', delimiter ='\t')
-            
+
             valid_column = valid_error.columns
             valid = []
             for col in valid_column:
                 valid.append('valid_'+col)
             valid_error.columns = valid
-            
+
             train_column = train_error.columns
             train = []
             for col in train_column:
                 train.append('train_'+col)
             train_error.columns = train
-            
-            
+
+
             read_error_file(valid_error, train_error)
