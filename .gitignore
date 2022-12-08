@@ -1,6 +1,7 @@
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+.sh
 
 asset/
 wandb/
@@ -21,3 +22,4 @@ catboost_info/
 .empty/
 data/
 *.pdf
+*.png
