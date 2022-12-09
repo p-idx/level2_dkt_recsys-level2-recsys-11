@@ -21,15 +21,36 @@ def get_model(args):
         model = lgb.LGBMClassifier(**param, n_estimators=100) #need seed
 
     if model_name == 'CATB':
-        model = ctb.CatBoostClassifier(
-                                    eval_metric='AUC',
-                                    iterations=args.n_epochs,
-                                    depth=args.depth,
-                                    learning_rate=args.lr,
-                                    verbose=args.verbose,
-                                    loss_function='Logloss', #사용자 지정 로스도 가능한 모양
-                                    od_type='IncToDec',
-                                    od_pval=args.od_pval,
-                                    od_wait=args.od_wait,
-                                    )
+        if args.od_type == 'Iter':
+            model = ctb.CatBoostClassifier(
+                            custom_metric=['AUC','Accuracy'],
+                            # eval_metric ='AUC',
+                            iterations=args.n_epochs,
+                            depth=args.depth,
+                            learning_rate=args.lr,
+                            verbose=args.verbose,
+                            loss_function=args.LOSS_FUNCTION, #사용자 지정 로스도 가능한 모양
+                            l2_leaf_reg = args.l2_leaf_reg,
+                            od_type=args.od_type,
+                            grow_policy=args.grow_policy,
+                            task_type='GPU'
+                            )
+
+        else:
+            model = ctb.CatBoostClassifier(
+                            custom_metric=['AUC','Accuracy'],
+                            # eval_metric ='AUC',
+                            iterations=args.n_epochs,
+                            depth=args.depth,
+                            learning_rate=args.lr,
+                            # verbose=args.verbose,
+                            loss_function=args.LOSS_FUNCTION, #사용자 지정 로스도 가능한 모양
+                            l2_leaf_reg = args.l2_leaf_reg,
+                            od_type=args.od_type,
+                            od_pval=0.05,
+                            od_wait=50,
+                            grow_policy=args.grow_policy,
+                            task_type='GPU'
+                            )
+        
     return model
