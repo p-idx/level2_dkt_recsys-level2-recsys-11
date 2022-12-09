@@ -30,10 +30,12 @@ class DKTLightning(pl.LightningModule):
         cate_x, cont_x, mask, targets = batch
         preds = self.model(cate_x, cont_x, mask, targets)
 
-    
-        loss = torch.mean(self.loss_fn(preds[:, -1], targets[:, -1]))
-
-        # loss = torch.mean(self.loss_fn(masked_preds, masked_targets))
+        if self.config.leak:
+            masked_preds = torch.masked_select(preds, mask.type(torch.bool))
+            masked_targets = torch.masked_select(targets, mask.type(torch.bool))
+            loss = torch.mean(self.loss_fn(masked_preds, masked_targets))
+        else:
+            loss = torch.mean(self.loss_fn(preds[:, -1], targets[:, -1]))
 
         self.epoch_train_preds.extend(preds.clone().detach().cpu().numpy()[:, -1])
         self.epoch_train_targets.extend(targets.clone().detach().cpu().numpy()[:, -1])
@@ -73,7 +75,13 @@ class DKTLightning(pl.LightningModule):
         cate_x, cont_x, mask, targets = batch
         preds = self.model(cate_x, cont_x, mask, targets)
 
-        val_loss = torch.mean(self.loss_fn(preds[:, -1], targets[:, -1]))
+        if self.config.leak:
+            masked_preds = torch.masked_select(preds, mask.type(torch.bool))
+            masked_targets = torch.masked_select(targets, mask.type(torch.bool))
+            val_loss = torch.mean(self.loss_fn(masked_preds, masked_targets))
+        else:
+            val_loss = torch.mean(self.loss_fn(preds[:, -1], targets[:, -1]))        
+
 
         self.epoch_valid_preds.extend(preds.clone().detach().cpu().numpy()[:, -1])
         self.epoch_valid_targets.extend(targets.clone().detach().cpu().numpy()[:, -1])

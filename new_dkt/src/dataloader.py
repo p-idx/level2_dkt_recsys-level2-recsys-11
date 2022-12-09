@@ -81,8 +81,8 @@ class DKTDataset(Dataset):
 
 
 def get_data(config, is_train):
-    train_data = pd.read_csv('/opt/ml/level2_dkt_recsys-level2-recsys-11/data/new_train_data2.csv')
-    test_data = pd.read_csv('/opt/ml/level2_dkt_recsys-level2-recsys-11/data/new_test_data2.csv')
+    train_data = pd.read_csv('/opt/ml/level2_dkt_recsys-level2-recsys-11/data/eda_train_data.csv')
+    test_data = pd.read_csv('/opt/ml/level2_dkt_recsys-level2-recsys-11/data/eda_test_data.csv')
 
     le_train_data, le_test_data = _label_encoding(config, train_data, test_data)
 

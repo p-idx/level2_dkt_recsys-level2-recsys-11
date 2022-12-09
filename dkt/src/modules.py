@@ -94,16 +94,43 @@ class EntireEmbedding(nn.Module):
 
 
 class FinalConnecting(nn.Module):
-    def __init__(self, args):
+    def __init__(self, args, input_dim):
         super().__init__()
         self.args = args
         self.final_layer = nn.Sequential(
-            nn.Linear(args.hidden_dim, args.hidden_dim), # 원래는 (args.hidden_dim, args.hidden_dim)
-            nn.LayerNorm(args.hidden_dim),
+            nn.Linear(input_dim, input_dim), # 원래는 (args.hidden_dim, args.hidden_dim)
+            nn.LayerNorm(input_dim),
             nn.Dropout(args.drop_out),
             nn.ReLU(),
-            nn.Linear(args.hidden_dim, 1)
+            nn.Linear(input_dim, 1)
         )
 
-    def forward(self, hs: torch.Tensor):
-        return self.final_layer(hs)
+    def forward(self, x: torch.Tensor):
+        return self.final_layer(x)
+
+
+class PositionalEncoding(nn.Module):
+    def __init__(self, seq_len, d_model, n):
+        super().__init__() # nn.Module 초기화
+        
+        # encoding : (seq_len, d_model)
+        self.encoding = torch.zeros(seq_len, d_model)
+        self.encoding.requires_grad = False
+        
+        # (seq_len, )
+        pos = torch.arange(0, seq_len)
+        # (seq_len, 1)         
+        pos = pos.float().unsqueeze(dim=1) # int64 -> float32 (없어도 되긴 함)
+        
+        _2i = torch.arange(0, d_model, step=2).float()
+        
+        self.encoding[:, ::2] = torch.sin(pos / (n ** (_2i / d_model)))
+        self.encoding[:, 1::2] = torch.cos(pos / (n ** (_2i / d_model)))
+        
+        
+    def forward(self, x):
+        # x.shape : (batch, seq_len) or (batch, seq_len, d_model)
+        seq_len = x.size()[1] 
+        # return : (seq_len, d_model)
+        # return matrix will be added to x by broadcasting
+        return self.encoding[:seq_len, :]

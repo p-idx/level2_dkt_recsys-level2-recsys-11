@@ -37,6 +37,10 @@ class DKTLightning(pl.LightningModule):
         preds = self.model(cate_x, cont_x, mask, targets)
 
         if self.args.leak:
+            mask = mask[:, 1:]
+            targets = targets[:, 1:]
+            if self.args.model not in ['SAKT', 'SAKT2']:
+                preds = preds[:, 1:]
             masked_preds = torch.masked_select(preds, mask.type(torch.bool))
             masked_targets = torch.masked_select(targets, mask.type(torch.bool))
             loss = torch.mean(self.loss_fn(masked_preds, masked_targets))
@@ -84,8 +88,13 @@ class DKTLightning(pl.LightningModule):
         preds = self.model(cate_x, cont_x, mask, targets)
 
         if self.args.leak:
+            mask = mask[:, 1:]
+            targets = targets[:, 1:]
+            if self.args.model not in ['SAKT', 'SAKT2']:
+                preds = preds[:, 1:]
             masked_preds = torch.masked_select(preds, mask.type(torch.bool))
             masked_targets = torch.masked_select(targets, mask.type(torch.bool))
+            
 
             val_loss = torch.mean(self.loss_fn(masked_preds, masked_targets))
         else:

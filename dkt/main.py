@@ -4,7 +4,7 @@ import datetime
 from args import parse_args
 from src.dataloader import DKTDataset, load_data
 from src.utils import setSeeds
-from src.model import LSTM, GRU
+from src.model import LSTM, GRU, SelfAttention, SelfAttention2, SelfAttention3, SelfAttention4, SelfAttention5, SelfAttention6, SAKT, SAKT2
 from src.lightning_model import DKTLightning
 
 import numpy as np
@@ -61,6 +61,22 @@ def main(args):
         torch_model = LSTM(args)
     elif args.model == 'GRU':
         torch_model = GRU(args)
+    elif args.model == 'SelfAttention':
+        torch_model = SelfAttention(args)
+    elif args.model == 'SelfAttention2':
+        torch_model = SelfAttention2(args)
+    elif args.model == 'SelfAttention3':
+        torch_model = SelfAttention3(args)
+    elif args.model == 'SelfAttention4':
+        torch_model = SelfAttention4(args)
+    elif args.model == 'SelfAttention5':
+        torch_model = SelfAttention5(args)
+    elif args.model == 'SelfAttention6':
+        torch_model = SelfAttention6(args)
+    elif args.model == 'SAKT':
+        torch_model = SAKT(args)
+    elif args.model == 'SAKT2':
+        torch_model = SAKT2(args)
 
     lightning_model = DKTLightning(args, torch_model.to('cuda'))
 
