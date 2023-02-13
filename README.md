@@ -53,8 +53,9 @@
 
 ## 3. 프로젝트 팀 구성 및 역할
 
-- 양성훈: 프로젝트 계획 수립, Baseline 재구축, DKT 모델 구축
-- 강수헌: EDA + feature engineering, CV 전략 검증, Catboost 성능 개선
-- 김동건: EDA + feature engineering, 부스팅 모델 설계 및 실험
-- 유상준: EDA + feature engineering, Catboost(+optuna), valid set 구축 전략
-- 백승렬: EDA + feature engineering, Catboost 및 GCN 모델 튜닝, 설계 및 실험
+---
+### 팀원 소개
+| [<img src="https://github.com/soso6079.png" width="100px">](https://github.com/soso6079) | [<img src="https://github.com/Zerotay.png" width="100px">](https://github.com/Zerotay) | [<img src="https://github.com/mbaek01.png" width="100px">](https://github.com/mbaek01) | [<img src="https://github.com/p-idx.png?v=4" width="100px">](https://github.com/p-idx) | [<img src="https://github.com/sj970806.png?v=4" width="100px">](https://github.com/sj970806) |  
+| :---: | :---: | :---: | :---: | :---: |  
+| [강수헌](https://github.com/soso6079) | [김동건](https://github.com/Zerotay) | [백승렬](https://github.com/mbaek01) | [양성훈](https://github.com/p-idx) | [유상준](https://github.com/sj970806) |
+|  EDA + feature engineering, CV 전략 검증, Catboost 성능 개선  |  EDA + feature engineering, 부스팅 모델 설계 및 실험  |  EDA + feature engineering, Catboost 및 GCN 모델 튜닝, 설계 및 실험  |  프로젝트 계획 수립, Baseline 재구축, DKT 모델 구축  |  EDA + feature engineering, Catboost(+optuna), valid set 구축 전략  |
