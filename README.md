@@ -1,6 +1,6 @@
 # Deep Knowledge Tracing
 <img src="https://user-images.githubusercontent.com/55279227/218374419-3382bc6e-ae7f-46ae-af04-e20b88764544.JPG" width="800" height="500"/>
-<a href="https://san97un.notion.site/Level2-recsys-dkt-Wrap-up-Report-bd339a7ceba342afa5fe0c7631890469">**Wrap-up Report**</a>  
+<a href="https://san97un.notion.site/Level2-recsys-dkt-Wrap-up-Report-bd339a7ceba342afa5fe0c7631890469"><b>Wrap-up Report</b></a>  
 
 ### **1-1. 프로젝트 소개**
 
