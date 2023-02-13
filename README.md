@@ -1,6 +1,7 @@
 # Deep Knowledge Tracing
 <img src="https://user-images.githubusercontent.com/55279227/218374419-3382bc6e-ae7f-46ae-af04-e20b88764544.JPG" width="800" height="500"/>
-<a href="https://san97un.notion.site/Level2-recsys-dkt-Wrap-up-Report-bd339a7ceba342afa5fe0c7631890469">**Wrap-up Report**</a>
+<a href="https://san97un.notion.site/Level2-recsys-dkt-Wrap-up-Report-bd339a7ceba342afa5fe0c7631890469">**Wrap-up Report**</a>  
+
 ### **1-1. 프로젝트 소개**
 
 - **Deep Knowledge Tracing**(이하 DKT)는 AI 모델을 활용하여 Knowledge Tracing을 하는 방법론이다. Knowledge Tracing은 유저의 지식 상태의 추이를 파악하여 다음 교육에 대한 추천 및 예측을 수행하는 task를 의미한다. 이때 딥러닝 기법을 활용해 보다 정확한 예측을 수행하고자 하는 것이 DKT이다. 과거 유저가 문제를 푼 데이터를 통해 개별 유저의 이해도와 수준을 학습하고, 이후 최적화된 문제를 추천함으로써 개인 맞춤화된 학습을 도울 수 있어 응용 기대효과가 높다.
