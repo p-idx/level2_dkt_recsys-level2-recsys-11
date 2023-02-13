@@ -36,7 +36,7 @@
 ### **1-5.** **개발환경**
 
 - <img src="https://img.shields.io/badge/github-181717?style=for-the-badge&logo=github&logoColor=white"><img src="https://img.shields.io/badge/vsc-007ACC?style=for-the-badge&logo=visualstudiocode&logoColor=white"><img src="https://img.shields.io/badge/anaconda-44A833?style=for-the-badge&logo=anaconda&logoColor=white">
-- <img src="https://img.shields.io/badge/pytorch-lightning-792EE5?style=for-the-badge&logo=pytorchlightning&logoColor=white"><img src="https://img.shields.io/badge/w&b-FFBE00?style=for-the-badge&logo=weightsandbiases&logoColor=white">
+- <img src="https://img.shields.io/badge/pytorchlightning-792EE5?style=for-the-badge&logo=pytorchlightning&logoColor=white"><img src="https://img.shields.io/badge/w&b-FFBE00?style=for-the-badge&logo=weightsandbiases&logoColor=white">
 
 
 ## 2. 프로젝트 기획
