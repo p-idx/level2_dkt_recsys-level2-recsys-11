@@ -10,44 +10,32 @@ from sklearn.metrics import roc_auc_score, accuracy_score
 
 
 class DKTLightning(pl.LightningModule):
-    def __init__(self, args, model: nn.Module):
+    def __init__(self, config, model: nn.Module):
         super().__init__()
-        self.args = args
+        self.config = config
         self.model = model
         # mse 로 갈아낄수도 있음.
-        if args.loss == 'bce':
+        if config.loss == 'bce':
             self.loss_fn = nn.BCEWithLogitsLoss(reduction='none')
-        elif args.loss == 'mse':
+        elif config.loss == 'mse':
             self.loss_fn = nn.MSELoss(reduction='none')
-            
-        # self.train_auc = AUROC(pos_label=1) # 얘네가 좋은 점은 사이킷런 꺼 보다 똘똘함.
-        # self.valid_auc = AUROC(pos_label=1)
-        # self.train_acc = Accuracy(threshold=0.5) # 아까 train valid 구분 안해서 이상했ㅇ므
-        # self.valid_acc = Accuracy(threshold=0.5)
 
         self.epoch_train_preds = []
         self.epoch_train_targets = []
         self.epoch_valid_preds = []
         self.epoch_valid_targets = []
-
     
         
     def training_step(self, batch: tuple, batch_idx) -> torch.Tensor:
         cate_x, cont_x, mask, targets = batch
         preds = self.model(cate_x, cont_x, mask, targets)
 
-        if self.args.leak:
-            mask = mask[:, 1:]
-            targets = targets[:, 1:]
-            if self.args.model not in ['SAKT', 'SAKT2']:
-                preds = preds[:, 1:]
+        if self.config.leak:
             masked_preds = torch.masked_select(preds, mask.type(torch.bool))
             masked_targets = torch.masked_select(targets, mask.type(torch.bool))
             loss = torch.mean(self.loss_fn(masked_preds, masked_targets))
         else:
             loss = torch.mean(self.loss_fn(preds[:, -1], targets[:, -1]))
-
-        # loss = torch.mean(self.loss_fn(masked_preds, masked_targets))
 
         self.epoch_train_preds.extend(preds.clone().detach().cpu().numpy()[:, -1])
         self.epoch_train_targets.extend(targets.clone().detach().cpu().numpy()[:, -1])
@@ -72,7 +60,7 @@ class DKTLightning(pl.LightningModule):
 
     def configure_optimizers(self):
         # Adam 말고 나중에 다른걸로
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.args.lr)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.config.learning_rate)
         scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
             optimizer, patience=2, factor=0.5, mode="max", verbose=True,
         )
@@ -87,22 +75,16 @@ class DKTLightning(pl.LightningModule):
         cate_x, cont_x, mask, targets = batch
         preds = self.model(cate_x, cont_x, mask, targets)
 
-        if self.args.leak:
-            mask = mask[:, 1:]
-            targets = targets[:, 1:]
-            if self.args.model not in ['SAKT', 'SAKT2']:
-                preds = preds[:, 1:]
+        if self.config.leak:
             masked_preds = torch.masked_select(preds, mask.type(torch.bool))
             masked_targets = torch.masked_select(targets, mask.type(torch.bool))
-            
-
             val_loss = torch.mean(self.loss_fn(masked_preds, masked_targets))
         else:
-            val_loss = torch.mean(self.loss_fn(preds[:, -1], targets[:, -1]))
+            val_loss = torch.mean(self.loss_fn(preds[:, -1], targets[:, -1]))        
+
 
         self.epoch_valid_preds.extend(preds.clone().detach().cpu().numpy()[:, -1])
         self.epoch_valid_targets.extend(targets.clone().detach().cpu().numpy()[:, -1])
-
 
         self.log('valid_loss', val_loss, on_step=False, on_epoch=True, prog_bar=True)
         return val_loss
@@ -130,16 +112,16 @@ class DKTLightning(pl.LightningModule):
     
 
     def on_predict_epoch_end(self, results):
-        l = 1 if self.args.leak else 0
+
         write_path = os.path.join(
-            self.args.output_dir, 
-            f"{self.model.__class__.__name__}_{self.args.time_info}_FE{self.args.fe}_V{l}.csv"
+            self.config.output_dir, 
+            f"{self.config.model}_{self.config.time_info}_K{self.config.k_i}_FE{self.config.cate_cols + self.config.cont_cols}.csv"
         )
 
         total_preds = torch.cat(results[0]).numpy()
 
-        if not os.path.exists(self.args.output_dir):
-            os.makedirs(self.args.output_dir)
+        if not os.path.exists(self.config.output_dir):
+            os.makedirs(self.config.output_dir)
 
         with open(write_path, "w", encoding="utf8") as w:
             w.write("id,prediction\n")
