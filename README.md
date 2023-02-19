@@ -1,3 +1,4 @@
+## [[개인 회고 및 동료 피드백 키워드]](https://github.com/p-idx/level2_dkt_recsys-level2-recsys-11/wiki/DKT-%ED%94%84%EB%A1%9C%EC%A0%9D%ED%8A%B8-%EA%B0%9C%EC%9D%B8-%ED%9A%8C%EA%B3%A0-%EB%B0%8F-%EB%8F%99%EB%A3%8C-%ED%94%BC%EB%93%9C%EB%B0%B1-%ED%82%A4%EC%9B%8C%EB%93%9C)
 # Deep Knowledge Tracing
 <img src="https://user-images.githubusercontent.com/55279227/218374419-3382bc6e-ae7f-46ae-af04-e20b88764544.JPG" width="800" height="500"/>
 <a href="https://san97un.notion.site/Level2-recsys-dkt-Wrap-up-Report-bd339a7ceba342afa5fe0c7631890469"><b>Wrap-up Report</b></a>  
